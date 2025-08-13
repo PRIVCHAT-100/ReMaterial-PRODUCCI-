@@ -2,9 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
-/**
- * Sectores → subcategorías (ajusta etiquetas/valores a los que usas al publicar productos)
- */
+/** Sectores → subcategorías */
 const SECTORS: Record<
   string,
   { label: string; subs: { value: string; label: string }[] }
@@ -72,8 +70,8 @@ const SECTORS: Record<
 };
 
 type Props = {
-  selectedSector: string;              // p.ej. "metalurgia" o ""
-  selectedSubcategory: string;         // p.ej. "aluminio" o ""
+  selectedSector: string;
+  selectedSubcategory: string;
   onSectorChange: (sector: string) => void;
   onSubcategoryChange: (sub: string) => void;
 };
@@ -84,11 +82,9 @@ export default function SectorCategoriesBar({
   onSectorChange,
   onSubcategoryChange,
 }: Props) {
-  // qué sector está abierto (accordion)
   const [openSector, setOpenSector] = useState<string | null>(null);
 
   const handleSectorClick = (sectorKey: string) => {
-    // Selecciona sector (o limpia si repites) y resetea subcategoría
     const next = sectorKey === selectedSector ? "" : sectorKey;
     onSectorChange(next);
     onSubcategoryChange("");
@@ -96,17 +92,16 @@ export default function SectorCategoriesBar({
   };
 
   const handleSubClick = (subValue: string) => {
-    // Solo cambia estado local (sin URL) → sin “saltos”
     const next = subValue === selectedSubcategory ? "" : subValue;
     onSubcategoryChange(next);
   };
 
   return (
-    <div className="container mx-auto px-4 pt-4">
-      <div className="rounded-2xl border border-input bg-background p-4 shadow-sm">
-        {/* Fila de sectores (scroll horizontal en móvil) */}
+    <div className="container mx-auto px-4">
+      {/* Contenedor plano: sin borde, sin radios, padding mínimo */}
+      <div className="px-2 py-1">
         <div className="overflow-x-auto">
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <Button
               type="button"
               size="sm"
@@ -116,7 +111,7 @@ export default function SectorCategoriesBar({
                 onSubcategoryChange("");
                 setOpenSector(null);
               }}
-              className="whitespace-nowrap"
+              className="h-8 px-3 text-xs whitespace-nowrap"
             >
               Todo
             </Button>
@@ -131,20 +126,19 @@ export default function SectorCategoriesBar({
                     size="sm"
                     variant={isActive ? "default" : "outline"}
                     onClick={() => handleSectorClick(key)}
-                    className="whitespace-nowrap inline-flex items-center gap-1"
+                    className="h-8 px-3 text-xs whitespace-nowrap inline-flex items-center gap-1"
                   >
                     {sector.label}
                     {isOpen ? (
-                      <ChevronDown className="h-4 w-4" />
+                      <ChevronDown className="h-3.5 w-3.5" />
                     ) : (
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-3.5 w-3.5" />
                     )}
                   </Button>
 
-                  {/* Subcategorías del sector abierto */}
                   {isOpen && (
-                    <div className="mt-3">
-                      <div className="flex flex-wrap gap-2">
+                    <div className="mt-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {sector.subs.map((sub) => (
                           <Button
                             key={sub.value}
@@ -154,7 +148,7 @@ export default function SectorCategoriesBar({
                               selectedSubcategory === sub.value ? "default" : "outline"
                             }
                             onClick={() => handleSubClick(sub.value)}
-                            className="whitespace-nowrap"
+                            className="h-7 px-2.5 text-xs whitespace-nowrap"
                           >
                             {sub.label}
                           </Button>
@@ -167,10 +161,7 @@ export default function SectorCategoriesBar({
             })}
           </div>
         </div>
-
-        <p className="mt-2 text-xs text-muted-foreground">
-          Elige un sector para ver sus subcategorías. Sin recargas ni movimiento del scroll.
-        </p>
+        {/* Sin texto ni espacio inferior */}
       </div>
     </div>
   );

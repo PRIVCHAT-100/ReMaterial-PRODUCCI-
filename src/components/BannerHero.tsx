@@ -3,56 +3,69 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type BannerItem = {
   id: string;
-  image: string;              // URL completa (Supabase Storage o externa)
+  image: string;
   alt?: string;
-  href?: string;              // Si lo pones, el banner será clicable
-  label?: string;             // Texto opcional para accesibilidad/overlay
-  objectPosition?: string;    // Ej: "center top", "left center", "50% 30%"
+  href?: string;
+  label?: string;
+  objectPosition?: string; // e.g. "center top"
 };
 
 type BannerHeroProps = {
   items: BannerItem[];
-  intervalMs?: number;        // tiempo entre slides (auto-rotación)
-  className?: string;         // estilos extra si quieres
-  heightClass?: string;       // alto fijo para evitar "saltos" (LCP estable)
+  className?: string;
+  heightClass?: string;
+  autoRotate?: boolean;   // ← NUEVO (por defecto true)
+  intervalMs?: number;    // ← NUEVO (por defecto 5000)
+  pauseOnHover?: boolean; // ← NUEVO (por defecto true)
+  showArrows?: boolean;   // ← NUEVO (por defecto true)
+  showDots?: boolean;     // ← NUEVO (por defecto true)
 };
 
 const BannerHero = ({
   items,
-  intervalMs = 4500,
   className = "",
   heightClass = "h-[220px] md:h-[300px] lg:h-[360px]",
+  autoRotate = true,
+  intervalMs = 5000,
+  pauseOnHover = true,
+  showArrows = true,
+  showDots = true,
 }: BannerHeroProps) => {
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
   const timerRef = useRef<number | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number | null>(null);
   const touchDeltaX = useRef(0);
+  const prefersReducedMotion = useRef<boolean>(false);
 
-  const hasItems = items && items.length > 0;
-  const count = hasItems ? items.length : 0;
+  const count = items?.length ?? 0;
+  const hasItems = count > 0;
 
-  // Navegación segura
   const goTo = (i: number) => {
     if (!count) return;
-    const next = (i + count) % count;
-    setIndex(next);
+    setIndex((i + count) % count);
   };
-
   const next = () => goTo(index + 1);
   const prev = () => goTo(index - 1);
 
-  // Auto-rotación con pausa
+  // Detecta prefers-reduced-motion
   useEffect(() => {
-    if (!count) return;
-    if (isPaused || count < 2) return;
+    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    prefersReducedMotion.current = !!mq?.matches;
+    const onChange = (e: MediaQueryListEvent) => {
+      prefersReducedMotion.current = e.matches;
+    };
+    mq?.addEventListener?.("change", onChange);
+    return () => mq?.removeEventListener?.("change", onChange);
+  }, []);
 
-    timerRef.current = window.setInterval(() => {
-      next();
-    }, intervalMs);
+  // Auto-rotación
+  useEffect(() => {
+    if (!hasItems || count < 2) return;
+    if (!autoRotate || isPaused || prefersReducedMotion.current) return;
 
+    timerRef.current = window.setInterval(next, intervalMs);
     return () => {
       if (timerRef.current) {
         window.clearInterval(timerRef.current);
@@ -60,60 +73,55 @@ const BannerHero = ({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, isPaused, intervalMs, count]);
+  }, [index, autoRotate, isPaused, intervalMs, count, hasItems]);
 
   // Pausar si la pestaña está oculta
   useEffect(() => {
-    const onVisibility = () => {
-      setIsPaused(document.hidden);
-    };
+    const onVisibility = () => setIsPaused(document.hidden);
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
-  // Navegación con teclado
+  // Precarga siguiente imagen
+  useEffect(() => {
+    if (!hasItems) return;
+    const nextIndex = (index + 1) % count;
+    const img = new Image();
+    img.src = items[nextIndex].image;
+  }, [index, hasItems, count, items]);
+
+  // Gestos táctiles
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchDeltaX.current = 0;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current == null) return;
+    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
+  };
+  const onTouchEnd = () => {
+    const t = 45;
+    if (touchDeltaX.current > t) prev();
+    if (touchDeltaX.current < -t) next();
+    touchStartX.current = null;
+    touchDeltaX.current = 0;
+  };
+
+  // Teclado
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "ArrowLeft") prev();
     if (e.key === "ArrowRight") next();
   };
 
-  // Deslizar en pantallas táctiles
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchDeltaX.current = 0;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (touchStartX.current == null) return;
-    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
-  };
-
-  const onTouchEnd = () => {
-    const threshold = 45; // px
-    if (touchDeltaX.current > threshold) prev();
-    if (touchDeltaX.current < -threshold) next();
-    touchStartX.current = null;
-    touchDeltaX.current = 0;
-  };
-
-  // Pre-cargar siguiente imagen
-  useEffect(() => {
-    if (!count) return;
-    const nextIndex = (index + 1) % count;
-    const img = new Image();
-    img.src = items[nextIndex].image;
-  }, [index, count, items]);
-
   if (!hasItems) return null;
 
   return (
     <section
-      className={`relative w-full overflow-hidden rounded-2xl bg-muted ${heightClass} ${className}`}
-      ref={containerRef}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onFocus={() => setIsPaused(true)}
-      onBlur={() => setIsPaused(false)}
+      className={`relative w-full overflow-hidden ${heightClass} ${className}`}
+      onMouseEnter={() => pauseOnHover && setIsPaused(true)}
+      onMouseLeave={() => pauseOnHover && setIsPaused(false)}
+      onFocus={() => pauseOnHover && setIsPaused(true)}
+      onBlur={() => pauseOnHover && setIsPaused(false)}
       onKeyDown={onKeyDown}
       tabIndex={0}
       aria-roledescription="carousel"
@@ -136,7 +144,6 @@ const BannerHero = ({
             draggable: false,
             style: { objectPosition: item.objectPosition || "center" } as React.CSSProperties,
           };
-
           const content = (
             <>
               <img src={item.image} {...commonImgProps} />
@@ -147,7 +154,6 @@ const BannerHero = ({
               )}
             </>
           );
-
           return (
             <div
               key={item.id}
@@ -160,7 +166,7 @@ const BannerHero = ({
               aria-label={`${i + 1} de ${count}${item.label ? `: ${item.label}` : ""}`}
             >
               {item.href ? (
-                <a href={item.href} className="block w-full h-full relative" tabIndex={isActive ? 0 : -1}>
+                <a className="block w-full h-full relative" href={item.href} tabIndex={isActive ? 0 : -1}>
                   {content}
                 </a>
               ) : (
@@ -172,13 +178,13 @@ const BannerHero = ({
       </div>
 
       {/* Flechas */}
-      {count > 1 && (
+      {showArrows && count > 1 && (
         <>
           <button
             type="button"
             aria-label="Anterior"
             onClick={prev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-full p-2 bg-white/80 hover:bg-white shadow-md focus:outline-none"
+            className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-full p-2 bg-white/90 hover:bg-white shadow-md focus:outline-none"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -186,7 +192,7 @@ const BannerHero = ({
             type="button"
             aria-label="Siguiente"
             onClick={next}
-            className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-full p-2 bg-white/80 hover:bg-white shadow-md focus:outline-none"
+            className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-full p-2 bg-white/90 hover:bg-white shadow-md focus:outline-none"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -194,7 +200,7 @@ const BannerHero = ({
       )}
 
       {/* Dots */}
-      {count > 1 && (
+      {showDots && count > 1 && (
         <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-2">
           {items.map((_, i) => (
             <button

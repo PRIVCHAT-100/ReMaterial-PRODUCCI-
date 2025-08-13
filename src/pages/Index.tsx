@@ -1,15 +1,13 @@
 // src/pages/Index.tsx
 import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Header from "@/components/Header";
 import ProductGrid from "@/components/ProductGrid";
 import Footer from "@/components/Footer";
 import BannerHero from "@/components/BannerHero";
 import SectorCategoriesBar from "@/components/SectorCategoriesBar";
 
-/**
- * Banners del Hero (fijos y seguros)
- */
+/** Banners del Hero (fijos) */
 const HERO_BANNERS = [
   {
     id: "b1",
@@ -37,39 +35,72 @@ const HERO_BANNERS = [
   },
 ];
 
-/**
- * Portada/Explorar:
- *  - Sectores + subcategorías (encima del banner)
- *  - Banner rotatorio
- *  - Grid de productos
- * Mantiene el buscador del Header (?search=) como estaba.
- */
 const Index = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const searchQuery = params.get("search") || "";
 
-  // Filtro local (sin tocar la URL → no hay “saltos”)
+  // Filtro local (sin cambiar URL)
   const [selectedSector, setSelectedSector] = useState<string>("");
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
 
-  // Para ProductGrid: usamos SOLO subcategoría.
-  // Si no hay subcategoría, pasamos "all" (así no rompemos nada).
+  // Medir alturas reales de header + barra
+  const headerWrapRef = useRef<HTMLDivElement | null>(null);
+  const catsWrapRef = useRef<HTMLDivElement | null>(null);
+  const [headerH, setHeaderH] = useState<number>(64);
+  const [catsH, setCatsH] = useState<number>(56);
+
+  useEffect(() => {
+    const measure = () => {
+      setHeaderH(headerWrapRef.current?.offsetHeight || 64);
+      setCatsH(catsWrapRef.current?.offsetHeight || 56);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+
+    const roHeader = headerWrapRef.current ? new ResizeObserver(measure) : null;
+    const roCats = catsWrapRef.current ? new ResizeObserver(measure) : null;
+    if (headerWrapRef.current && roHeader) roHeader.observe(headerWrapRef.current);
+    if (catsWrapRef.current && roCats) roCats.observe(catsWrapRef.current);
+
+    return () => {
+      window.removeEventListener("resize", measure);
+      roHeader?.disconnect();
+      roCats?.disconnect();
+    };
+  }, []);
+
+  // Para ProductGrid: prioriza subcategoría; si no hay, muestra todo.
   const selectedCategoryForGrid = selectedSubcategory || "all";
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {/* Header fijo — fondo sólido (sin border-b para evitar doble línea) */}
+      <div
+        ref={headerWrapRef}
+        className="fixed top-0 inset-x-0 z-50 bg-white"
+      >
+        <Header />
+      </div>
 
-      {/* Sectores y subcategorías (encima del banner) */}
-      <SectorCategoriesBar
-        selectedSector={selectedSector}
-        selectedSubcategory={selectedSubcategory}
-        onSectorChange={setSelectedSector}
-        onSubcategoryChange={setSelectedSubcategory}
-      />
+      {/* Barra de sectores fija — fondo sólido; solapada -1px para matar el gap */}
+      <div
+        ref={catsWrapRef}
+        className="fixed inset-x-0 z-40 bg-white border-b"
+        style={{ top: headerH - 1 }}
+      >
+        <SectorCategoriesBar
+          selectedSector={selectedSector}
+          selectedSubcategory={selectedSubcategory}
+          onSectorChange={setSelectedSector}
+          onSubcategoryChange={setSelectedSubcategory}
+        />
+      </div>
 
-      {/* Banner rotatorio */}
+      {/* Spacer para no tapar contenido (ajustado al solape de -1px) */}
+      <div style={{ height: headerH + catsH - 1 }} />
+
+      {/* Banner */}
       <div className="container mx-auto px-4 pt-6">
         <BannerHero
           items={HERO_BANNERS}
@@ -77,7 +108,7 @@ const Index = () => {
         />
       </div>
 
-      {/* Grid de productos (sin recargas) */}
+      {/* Grid de productos */}
       <ProductGrid
         selectedCategory={selectedCategoryForGrid}
         searchQuery={searchQuery}
