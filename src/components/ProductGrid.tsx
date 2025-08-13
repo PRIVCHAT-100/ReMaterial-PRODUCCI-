@@ -42,6 +42,23 @@ interface Product {
   };
 }
 
+/** NUEVO: mapa de SECTOR → lista de subcategorías (ajusta a tus valores reales de DB) */
+const SECTOR_TO_CATEGORIES: Record<string, string[]> = {
+  construccion: [
+    "aridos",
+    "ladrillo-ceramica",
+    "cemento-mortero",
+    "aislamientos",
+    "vidrio-obra",
+    "metales-obra",
+  ],
+  textil: ["algodon", "poliester", "mezclas", "retales", "hilo-bobinas"],
+  madera: ["tablones", "palets", "aglomerado", "contrachapado", "serrin"],
+  metalurgia: ["acero", "aluminio", "cobre", "laton", "inox"],
+  piedra: ["marmol", "granito", "pizarra", "aridos-piedra"],
+  otros: ["plastico", "vidrio", "papel-carton", "electronica", "maquinaria"],
+};
+
 const ProductGrid = ({
   selectedCategory,
   searchQuery = "",
@@ -165,9 +182,10 @@ const ProductGrid = ({
   const filteredProducts = useMemo(() => {
     let filtered = products;
 
-    // Categoría UI (legacy)
+    // 🆕 Categoría/sector desde UI
     if (selectedCategory !== "all") {
-      const map: Record<string, string> = {
+      // Compatibilidad con valores previos (mapeos inglés → slugs internos)
+      const legacyMap: Record<string, string> = {
         construction: "construccion",
         textile: "textil",
         metal: "metalurgia",
@@ -176,7 +194,27 @@ const ProductGrid = ({
         plastic: "plastico",
         electronics: "electronica",
       };
-      filtered = filtered.filter((p) => p.category?.toLowerCase() === (map[selectedCategory] || selectedCategory));
+
+      const normalized = (legacyMap[selectedCategory] || selectedCategory || "").toLowerCase().trim();
+
+      if (normalized) {
+        const sectorSubcats = SECTOR_TO_CATEGORIES[normalized];
+        if (sectorSubcats && sectorSubcats.length) {
+          // Es un SECTOR → incluye cualquiera de sus subcategorías (por slug o por category legado)
+          filtered = filtered.filter((p) => {
+            const cat = (p.category || "").toLowerCase();
+            const subSlug = (p.subcategory_slug || "").toLowerCase();
+            return sectorSubcats.includes(cat) || sectorSubcats.includes(subSlug);
+          });
+        } else {
+          // Es una SUBCATEGORÍA → coincidencia directa por slug / category
+          filtered = filtered.filter((p) => {
+            const cat = (p.category || "").toLowerCase();
+            const subSlug = (p.subcategory_slug || "").toLowerCase();
+            return cat === normalized || subSlug === normalized;
+          });
+        }
+      }
     }
 
     // Slugs /c/:cat/:sub

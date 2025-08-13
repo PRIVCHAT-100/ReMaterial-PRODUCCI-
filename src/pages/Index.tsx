@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import ProductGrid from "@/components/ProductGrid";
 import Footer from "@/components/Footer";
 import BannerHero from "@/components/BannerHero";
-import SectorCategoriesBar from "@/components/SectorCategoriesBar";
+import SectorMegaMenu from "@/components/SectorMegaMenu";
 
 /** Banners del Hero (fijos) */
 const HERO_BANNERS = [
@@ -40,7 +40,7 @@ const Index = () => {
   const params = new URLSearchParams(location.search);
   const searchQuery = params.get("search") || "";
 
-  // Filtro local (sin cambiar URL)
+  // Filtro local
   const [selectedSector, setSelectedSector] = useState<string>("");
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
 
@@ -71,25 +71,22 @@ const Index = () => {
   }, []);
 
   // Para ProductGrid: prioriza subcategoría; si no hay, muestra todo.
-  const selectedCategoryForGrid = selectedSubcategory || "all";
+  const selectedCategoryForGrid = selectedSubcategory || selectedSector || "all";
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header fijo — fondo sólido (sin border-b para evitar doble línea) */}
-      <div
-        ref={headerWrapRef}
-        className="fixed top-0 inset-x-0 z-50 bg-white"
-      >
+      {/* Header fijo — fondo sólido (sin borde para evitar doble línea) */}
+      <div ref={headerWrapRef} className="fixed top-0 inset-x-0 z-50 bg-white">
         <Header />
       </div>
 
-      {/* Barra de sectores fija — fondo sólido; solapada -1px para matar el gap */}
+      {/* Barra fija de categorías — fondo sólido; sin transparencia */}
       <div
         ref={catsWrapRef}
-        className="fixed inset-x-0 z-40 bg-white border-b"
-        style={{ top: headerH - 1 }}
+        className="fixed inset-x-0 z-40 bg-white border-b overflow-visible"
+        style={{ top: headerH - 1 }} // -1px para matar micro-gap
       >
-        <SectorCategoriesBar
+        <SectorMegaMenu
           selectedSector={selectedSector}
           selectedSubcategory={selectedSubcategory}
           onSectorChange={setSelectedSector}
@@ -97,7 +94,7 @@ const Index = () => {
         />
       </div>
 
-      {/* Spacer para no tapar contenido (ajustado al solape de -1px) */}
+      {/* Spacer para no tapar contenido */}
       <div style={{ height: headerH + catsH - 1 }} />
 
       {/* Banner */}

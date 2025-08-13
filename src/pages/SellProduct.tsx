@@ -13,6 +13,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Upload, X, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import SectorSubcategoryField, { SectorSubcategoryValue } from "@/components/forms/SectorSubcategoryField";
+import SectorCascadeMenu, { SectorCascadeValue } from "@/components/forms/SectorCascadeMenu";
 
 const SellProduct = () => {
   const { user } = useAuth();
@@ -21,6 +23,11 @@ const SellProduct = () => {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [sectorSel, setSectorSel] = useState<SectorCascadeValue>({ sector: "", subcategory: "" });
+  const [sectorField, setSectorField] = useState<SectorSubcategoryValue>({
+    sector: "",
+    subcategory: "",
+  });
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -231,19 +238,15 @@ const SellProduct = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="category">Categoría*</Label>
-                      <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una categoría" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.value} value={category.value}>
-                              {category.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SectorCascadeMenu
+                        value={sectorSel}
+                        onChange={(v) => {
+                          setSectorSel(v);
+                          // Compatibilidad total: guardamos la subcategoría en tu campo 'category'
+                          handleInputChange("category", v.subcategory);
+                        }}
+                        required
+                      />
                     </div>
 
                     <div className="space-y-2">
