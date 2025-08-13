@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const base = {
       id: user.id, // PK = auth.uid()
       email: user.email ?? userData?.email ?? null,
-      is_seller: userData?.user_type === 'business',
+      is_seller: userData?.is_seller ?? (userData?.user_type === 'business') ?? false,
       first_name: userData?.first_name ?? '',
       last_name: userData?.last_name ?? '',
       company_name: userData?.company_name ?? null,
