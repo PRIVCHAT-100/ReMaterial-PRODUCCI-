@@ -16,15 +16,14 @@ import {
   Heart, 
   Share2, 
   Star,
-  Building,
   Phone,
-  Mail,
-  Globe,
   ArrowLeft,
-  ShoppingCart
+  ShoppingCart,
+  Pencil
 } from "lucide-react";
 import { PaymentDialog } from "@/components/payment/PaymentDialog";
 import { useToast } from "@/hooks/use-toast";
+import CounterOfferDialog from "@/components/CounterOfferDialog";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -36,7 +35,8 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [detailIndex, setDetailIndex] = useState(0); // <-- añadido
+  const [detailIndex, setDetailIndex] = useState(0);
+  const [counterOpen, setCounterOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -58,7 +58,6 @@ const ProductDetail = () => {
       if (productError) throw productError;
       setProduct(productData);
 
-      // Fetch seller information
       const { data: sellerData, error: sellerError } = await supabase
         .from('profiles')
         .select('*')
@@ -68,7 +67,6 @@ const ProductDetail = () => {
       if (sellerError) throw sellerError;
       setSeller(sellerData);
 
-      // Increment view count
       await supabase
         .from('products')
         .update({ views: (productData.views || 0) + 1 })
@@ -97,7 +95,7 @@ const ProductDetail = () => {
 
       setIsFavorite(!!data);
     } catch (error) {
-      // No favorite found
+      // ignore
     }
   };
 
@@ -119,30 +117,17 @@ const ProductDetail = () => {
           .eq('user_id', user.id)
           .eq('product_id', id);
         setIsFavorite(false);
-        toast({
-          title: "Eliminado de favoritos",
-          description: "El producto ha sido eliminado de tus favoritos",
-        });
+        toast({ title: "Eliminado de favoritos", description: "El producto ha sido eliminado de tus favoritos" });
       } else {
         await supabase
           .from('favorites')
-          .insert({
-            user_id: user.id,
-            product_id: id,
-          });
+          .insert({ user_id: user.id, product_id: id });
         setIsFavorite(true);
-        toast({
-          title: "Añadido a favoritos",
-          description: "El producto ha sido añadido a tus favoritos",
-        });
+        toast({ title: "Añadido a favoritos", description: "El producto ha sido añadido a tus favoritos" });
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar los favoritos",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudo actualizar los favoritos", variant: "destructive" });
     }
   };
 
@@ -156,6 +141,50 @@ const ProductDetail = () => {
       return;
     }
     navigate(`/messages?seller=${product.seller_id}&product=${product.id}`);
+  };
+
+  // 🆕 Quitar reserva (solo vendedor)
+  const unreserve = async () => {
+    if (!user || user.id !== product.seller_id) return;
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ reserved: false, reserved_by: null, reserved_price: null, reserved_until: null, updated_at: new Date().toISOString() })
+        .eq('id', product.id);
+      if (error) throw error;
+      setProduct((prev: any) => ({ ...prev, reserved: false, reserved_by: null, reserved_price: null, reserved_until: null }));
+      toast({ title: "Reserva retirada", description: "El producto ya no está reservado." });
+    } catch (e: any) {
+      toast({ title: "Error", description: e?.message || "No se pudo retirar la reserva", variant: "destructive" });
+    }
+  };
+
+  // 🆕 Reservar directamente (sin oferta previa)
+  const reserveDirect = async () => {
+    if (!user || user.id !== product.seller_id) return;
+    const input = window.prompt("Introduce el precio acordado en euros (opcional). Deja vacío para no guardar precio:");
+    if (input === null) return; // cancelado
+    const txt = input.trim();
+    let agreed: number | null = null;
+    if (txt) {
+      const parsed = Number(String(txt).replace(",", "."));
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        toast({ title: "Precio inválido", description: "Introduce un número válido (ej. 1200.50)", variant: "destructive" });
+        return;
+      }
+      agreed = parsed;
+    }
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ reserved: true, reserved_by: null, reserved_price: agreed, reserved_until: null, updated_at: new Date().toISOString() })
+        .eq('id', product.id);
+      if (error) throw error;
+      setProduct((prev: any) => ({ ...prev, reserved: true, reserved_by: null, reserved_price: agreed }));
+      toast({ title: "Reservado", description: "El producto ha sido marcado como RESERVADO." });
+    } catch (e: any) {
+      toast({ title: "Error", description: e?.message || "No se pudo reservar el producto", variant: "destructive" });
+    }
   };
 
   if (loading) {
@@ -189,9 +218,7 @@ const ProductDetail = () => {
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold mb-4">Producto no encontrado</h2>
               <p className="text-muted-foreground mb-4">El producto que buscas no existe o ha sido eliminado.</p>
-              <Button onClick={() => navigate('/')} type="button">
-                Volver al inicio
-              </Button>
+              <Button onClick={() => navigate('/')} type="button">Volver al inicio</Button>
             </CardContent>
           </Card>
         </div>
@@ -200,7 +227,6 @@ const ProductDetail = () => {
     );
   }
 
-  // índice seguro para el carrusel en detalle (solo a partir de aquí product existe)
   const currentIdx = product?.images?.length
     ? Math.min(Math.max(detailIndex, 0), product.images.length - 1)
     : 0;
@@ -210,7 +236,6 @@ const ProductDetail = () => {
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} type="button">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -219,10 +244,19 @@ const ProductDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Product Images */}
+          {/* Imágenes */}
           <div className="lg:col-span-2">
             <div className="space-y-4">
               <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                {/* 🆕 Cinta RESERVADO en la imagen */}
+                {product.reserved && (
+                  <div className="absolute left-0 top-0 z-10">
+                    <div className="bg-amber-600 text-white text-xs font-bold px-3 py-1 rounded-br-xl">
+                      RESERVADO
+                    </div>
+                  </div>
+                )}
+
                 {product.images && product.images.length > 0 ? (
                   <img 
                     src={product.images[currentIdx]} 
@@ -275,13 +309,19 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* Product Info */}
+          {/* Info */}
           <div className="space-y-6">
             <div>
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h1 className="text-3xl font-bold text-foreground mb-2">{product.title}</h1>
-                  <Badge variant="secondary">{product.category}</Badge>
+                  <div className="flex items-center gap-2">
+                    {product.category && <Badge variant="secondary">{product.category}</Badge>}
+                    {/* 🆕 Badge RESERVADO junto al título */}
+                    {product.reserved && (
+                      <Badge className="bg-amber-600 hover:bg-amber-600 text-white">RESERVADO</Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={toggleFavorite} type="button">
@@ -289,17 +329,20 @@ const ProductDetail = () => {
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => {
                     navigator.clipboard.writeText(window.location.href);
-                    toast({
-                      title: "Enlace copiado",
-                      description: "El enlace del producto ha sido copiado al portapapeles",
-                    });
+                    toast({ title: "Enlace copiado", description: "El enlace del producto ha sido copiado al portapapeles" });
                   }}>
                     <Share2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
               
-              <div className="text-4xl font-bold text-primary mb-4">€{product.price}</div>
+              <div className="text-4xl font-bold text-primary mb-2">€{product.price}</div>
+              {/* 🆕 Mostrar precio reservado si existe */}
+              {product.reserved && product.reserved_price != null && (
+                <div className="text-sm text-amber-700 mb-2">
+                  Reservado por €{Number(product.reserved_price).toLocaleString("es-ES")}
+                </div>
+              )}
               
               <div className="space-y-2 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -317,12 +360,65 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Acciones */}
             <div className="space-y-3">
+              {/* 🆕 Reservar directo (solo vendedor y si NO está reservado) */}
+              {user?.id === product.seller_id && !product.reserved && (
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  type="button"
+                  onClick={reserveDirect}
+                >
+                  Marcar como RESERVADO (precio acordado)
+                </Button>
+              )}
+
+              {/* 🆕 Quitar reserva (solo vendedor y si está reservado) */}
+              {user?.id === product.seller_id && product.reserved && (
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  type="button"
+                  onClick={unreserve}
+                >
+                  Quitar reserva
+                </Button>
+              )}
+
+              {/* 🔒 Editar: pasa el producto por state para precargar al instante */}
+              {user?.id === product.seller_id && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  type="button"
+                  onClick={() => navigate(`/product/${product.id}/edit`, { state: { product } })}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar producto
+                </Button>
+              )}
+
               <Button onClick={handleContact} className="w-full" type="button">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Contactar Vendedor
               </Button>
+
+              <Button 
+                variant="outline"
+                className="w-full"
+                type="button"
+                onClick={() => {
+                  if (!user) {
+                    toast({ title: "Inicia sesión", description: "Debes iniciar sesión para hacer una contraoferta", variant: "destructive" });
+                    return;
+                  }
+                  setCounterOpen(true);
+                }}
+              >
+                💬 Hacer contraoferta
+              </Button>
+
               {product.allow_direct_purchase && (
                 <Button 
                   variant="outline" 
@@ -335,7 +431,7 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Seller Info */}
+            {/* Vendedor */}
             {seller && (
               <Card>
                 <CardContent className="p-4">
@@ -347,7 +443,6 @@ const ProductDetail = () => {
                     </Avatar>
                     <div className="flex-1">
                       <h3 className="font-semibold">{seller.company_name}</h3>
-                      <p className="text-sm text-muted-foreground">{seller.sector}</p>
                       <div className="flex items-center mt-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star key={star} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -386,7 +481,7 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Product Description */}
+        {/* Descripción */}
         <div className="mt-8">
           <Card>
             <CardContent className="p-6">
@@ -413,6 +508,18 @@ const ProductDetail = () => {
         </div>
       </div>
       
+      <CounterOfferDialog
+        open={counterOpen}
+        onOpenChange={setCounterOpen}
+        product={{
+          id: product.id,
+          title: product.title,
+          unit: product.unit,
+          price: product.price,
+          seller_id: product.seller_id,
+        }}
+      />
+
       <PaymentDialog 
         open={paymentDialogOpen}
         onOpenChange={setPaymentDialogOpen}

@@ -2,8 +2,6 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import { Button } from "@/components/ui/button";
-// ⛔️ quitamos el Select de shadcn para evitar overlays que bloquean scroll
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Grid, List, SlidersHorizontal, ChevronLeft, ChevronRight, ArrowUpDown, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,16 +11,21 @@ import FiltersSidebar, { FiltersState } from "./FiltersSidebar";
 interface ProductGridProps {
   selectedCategory: string;
   searchQuery?: string;
-  /** slug de categoría desde /c/:cat */
-  categorySlug?: string;
-  /** slug de subcategoría desde /c/:cat/:sub */
-  subSlug?: string;
+  categorySlug?: string; // /c/:cat
+  subSlug?: string;      // /c/:cat/:sub
+}
+
+interface SellerProfile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  company_name: string;
 }
 
 interface Product {
   id: string;
   title: string;
-  price: number | string; // aceptar string también
+  price: number | string;
   quantity: number;
   unit: string;
   category: string;
@@ -34,24 +37,16 @@ interface Product {
   description: string;
   seller_id: string;
   created_at: string;
-  profiles?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    company_name: string;
-  };
+  // 🔁 Antes era `profiles`, ahora embebemos como `seller` usando la FK exacta
+  seller?: SellerProfile | null;
+
+  // Reserva
+  reserved?: boolean;
+  reserved_price?: number | null;
 }
 
-/** NUEVO: mapa de SECTOR → lista de subcategorías (ajusta a tus valores reales de DB) */
 const SECTOR_TO_CATEGORIES: Record<string, string[]> = {
-  construccion: [
-    "aridos",
-    "ladrillo-ceramica",
-    "cemento-mortero",
-    "aislamientos",
-    "vidrio-obra",
-    "metales-obra",
-  ],
+  construccion: ["aridos", "ladrillo-ceramica", "cemento-mortero", "aislamientos", "vidrio-obra", "metales-obra"],
   textil: ["algodon", "poliester", "mezclas", "retales", "hilo-bobinas"],
   madera: ["tablones", "palets", "aglomerado", "contrachapado", "serrin"],
   metalurgia: ["acero", "aluminio", "cobre", "laton", "inox"],
@@ -67,7 +62,7 @@ const ProductGrid = ({
 }: ProductGridProps) => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"recent" | "price-low" | "price-high">("recent");
-  const [sortOpen, setSortOpen] = useState(false); // NUEVO: menú simple sin overlay
+  const [sortOpen, setSortOpen] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -96,29 +91,47 @@ const ProductGrid = ({
   useEffect(() => {
     fetchProducts();
     if (user) fetchFavorites();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, searchQuery]);
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
+      // ⚠️ Desambiguamos el embed de perfiles usando el nombre de la FK por defecto:
+      // products_seller_id_fkey (si tu FK tiene otro nombre, cámbialo aquí)
+      let query = supabase
         .from("products")
         .select(`
           *,
-          profiles (
+          seller:profiles!products_seller_id_fkey (
             id,
             first_name,
             last_name,
             company_name
           )
         `)
-        .eq("status", "active")
-        .order("created_at", { ascending: false });
+        .eq("status", "active");
+
+      if (searchQuery && searchQuery.trim()) {
+        query = query.textSearch("search_vector", searchQuery.trim(), {
+          type: "websearch",
+          config: "spanish",
+        });
+      }
+
+      const { data, error } = await query.order("created_at", { ascending: false });
 
       if (error) throw error;
       setProducts(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching products:", err);
-      toast({ title: "Error", description: "No se pudieron cargar los productos", variant: "destructive" });
+      toast({
+        title: "Error",
+        description:
+          err?.message?.includes("relationship")
+            ? "Hay varias relaciones entre products y profiles. Ya lo hemos desambiguado para el vendedor. Si tu FK tiene otro nombre, avísame y lo ajusto."
+            : "No se pudieron cargar los productos",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -140,18 +153,28 @@ const ProductGrid = ({
 
   const toggleFavorite = async (productId: string) => {
     if (!user) {
-      toast({ title: "Inicia sesión", description: "Debes iniciar sesión para guardar favoritos", variant: "destructive" });
+      toast({
+        title: "Inicia sesión",
+        description: "Debes iniciar sesión para guardar favoritos",
+        variant: "destructive",
+      });
       return;
     }
     const isFav = favorites.includes(productId);
     try {
       if (isFav) {
-        const { error } = await supabase.from("favorites").delete().eq("user_id", user.id).eq("product_id", productId);
+        const { error } = await supabase
+          .from("favorites")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("product_id", productId);
         if (error) throw error;
         setFavorites((prev) => prev.filter((id) => id !== productId));
         toast({ title: "Eliminado de favoritos", description: "Se quitó de tus favoritos" });
       } else {
-        const { error } = await supabase.from("favorites").insert({ user_id: user.id, product_id: productId });
+        const { error } = await supabase
+          .from("favorites")
+          .insert({ user_id: user.id, product_id: productId });
         if (error) throw error;
         setFavorites((prev) => [...prev, productId]);
         toast({ title: "Añadido a favoritos", description: "Se guardó en tus favoritos" });
@@ -164,7 +187,6 @@ const ProductGrid = ({
 
   const units = useMemo(() => Array.from(new Set(products.map((p) => p.unit).filter(Boolean))), [products]);
 
-  // Helper seguro para precio numérico
   const nPrice = (p: Product) => {
     const v = p.price as any;
     const num = typeof v === "number" ? v : Number(v);
@@ -173,18 +195,19 @@ const ProductGrid = ({
 
   const sortLabel = useMemo(() => {
     switch (sortBy) {
-      case "price-low":  return "Precio: menor a mayor";
-      case "price-high": return "Precio: mayor a menor";
-      default:           return "Más recientes";
+      case "price-low":
+        return "Precio: menor a mayor";
+      case "price-high":
+        return "Precio: mayor a menor";
+      default:
+        return "Más recientes";
     }
   }, [sortBy]);
 
   const filteredProducts = useMemo(() => {
     let filtered = products;
 
-    // 🆕 Categoría/sector desde UI
     if (selectedCategory !== "all") {
-      // Compatibilidad con valores previos (mapeos inglés → slugs internos)
       const legacyMap: Record<string, string> = {
         construction: "construccion",
         textile: "textil",
@@ -195,51 +218,41 @@ const ProductGrid = ({
         electronics: "electronica",
       };
 
-      const normalized = (legacyMap[selectedCategory] || selectedCategory || "").toLowerCase().trim();
+      const normalized = (legacyMap[selectedCategory] || selectedCategory || "")
+        .toLowerCase()
+        .trim();
 
       if (normalized) {
         const sectorSubcats = SECTOR_TO_CATEGORIES[normalized];
         if (sectorSubcats && sectorSubcats.length) {
-          // Es un SECTOR → incluye cualquiera de sus subcategorías (por slug o por category legado)
           filtered = filtered.filter((p) => {
             const cat = (p.category || "").toLowerCase();
-            const subSlug = (p.subcategory_slug || "").toLowerCase();
-            return sectorSubcats.includes(cat) || sectorSubcats.includes(subSlug);
+            const sslug = (p.subcategory_slug || "").toLowerCase();
+            return sectorSubcats.includes(cat) || sectorSubcats.includes(sslug);
           });
         } else {
-          // Es una SUBCATEGORÍA → coincidencia directa por slug / category
           filtered = filtered.filter((p) => {
             const cat = (p.category || "").toLowerCase();
-            const subSlug = (p.subcategory_slug || "").toLowerCase();
-            return cat === normalized || subSlug === normalized;
+            const sslug = (p.subcategory_slug || "").toLowerCase();
+            return cat === normalized || sslug === normalized;
           });
         }
       }
     }
 
-    // Slugs /c/:cat/:sub
     if (categorySlug) {
       const catSlug = categorySlug.toLowerCase();
-      filtered = filtered.filter((p) => (p.category_slug || p.category || "").toLowerCase() === catSlug);
+      filtered = filtered.filter(
+        (p) => (p.category_slug || p.category || "").toLowerCase() === catSlug
+      );
     }
     if (subSlug) {
       const sSlug = subSlug.toLowerCase();
-      filtered = filtered.filter((p) => (p.subcategory_slug || p.subcategory || "").toLowerCase() === sSlug);
-    }
-
-    // Búsqueda libre
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        (p) =>
-          p.title?.toLowerCase().includes(q) ||
-          p.description?.toLowerCase().includes(q) ||
-          p.location?.toLowerCase().includes(q) ||
-          p.category?.toLowerCase().includes(q)
+        (p) => (p.subcategory_slug || p.subcategory || "").toLowerCase() === sSlug
       );
     }
 
-    // Filtros avanzados
     const priceMin = filters.priceMin ? Number(filters.priceMin) : null;
     const priceMax = filters.priceMax ? Number(filters.priceMax) : null;
     const qtyMin = filters.quantityMin ? Number(filters.quantityMin) : null;
@@ -250,7 +263,8 @@ const ProductGrid = ({
       const price = nPrice(p);
       if (priceMin !== null && price < priceMin) return false;
       if (priceMax !== null && price > priceMax) return false;
-      if (filters.location.trim() && !p.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
+      if (filters.location.trim() && !p.location?.toLowerCase().includes(filters.location.toLowerCase()))
+        return false;
       if (filters.unit && p.unit !== filters.unit) return false;
       if (qtyMin !== null && (p.quantity ?? 0) < qtyMin) return false;
       if (qtyMax !== null && (p.quantity ?? 0) > qtyMax) return false;
@@ -268,7 +282,6 @@ const ProductGrid = ({
       return true;
     });
 
-    // Orden
     switch (sortBy) {
       case "price-low":
         filtered = [...filtered].sort((a, b) => nPrice(a) - nPrice(b));
@@ -277,14 +290,12 @@ const ProductGrid = ({
         filtered = [...filtered].sort((a, b) => nPrice(b) - nPrice(a));
         break;
       default:
-        // "recent": ya vienen por created_at desc
         break;
     }
 
     return filtered;
   }, [products, selectedCategory, searchQuery, sortBy, filters, categorySlug, subSlug]);
 
-  // Reset página cuando cambian filtros/búsqueda/orden/categoría/slugs
   useEffect(() => setPage(1), [selectedCategory, searchQuery, sortBy, filters, categorySlug, subSlug]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
@@ -335,7 +346,7 @@ const ProductGrid = ({
               Filtros
             </Button>
 
-            {/* Mostrar 12 / 18 / 24 — SIN overlay */}
+            {/* Mostrar 12 / 18 / 24 */}
             <div className="hidden sm:inline-flex border border-border rounded-md overflow-hidden">
               {[12, 18, 24].map((n) => (
                 <Button
@@ -354,7 +365,7 @@ const ProductGrid = ({
               ))}
             </div>
 
-            {/* Orden — BOTÓN con menú sencillo (sin portal ni overlay) */}
+            {/* Orden */}
             <div className="relative">
               <Button
                 variant="outline"
@@ -374,19 +385,28 @@ const ProductGrid = ({
                 >
                   <button
                     className="w-full text-left px-3 py-2 hover:bg-muted flex items-center"
-                    onClick={() => { setSortBy("recent"); setSortOpen(false); }}
+                    onClick={() => {
+                      setSortBy("recent");
+                      setSortOpen(false);
+                    }}
                   >
                     {sortBy === "recent" && <Check className="mr-2 h-4 w-4" />} Más recientes
                   </button>
                   <button
                     className="w-full text-left px-3 py-2 hover:bg-muted flex items-center"
-                    onClick={() => { setSortBy("price-low"); setSortOpen(false); }}
+                    onClick={() => {
+                      setSortBy("price-low");
+                      setSortOpen(false);
+                    }}
                   >
                     {sortBy === "price-low" && <Check className="mr-2 h-4 w-4" />} Precio: menor a mayor
                   </button>
                   <button
                     className="w-full text-left px-3 py-2 hover:bg-muted flex items-center"
-                    onClick={() => { setSortBy("price-high"); setSortOpen(false); }}
+                    onClick={() => {
+                      setSortBy("price-high");
+                      setSortOpen(false);
+                    }}
                   >
                     {sortBy === "price-high" && <Check className="mr-2 h-4 w-4" />} Precio: mayor a menor
                   </button>
@@ -456,27 +476,37 @@ const ProductGrid = ({
               <>
                 <div className={viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" : "space-y-3"}>
                   {pageItems.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      id={product.id}
-                      title={product.title}
-                      price={`€${nPrice(product)}`}
-                      location={product.location || "No especificada"}
-                      image={product.images?.[0] || ""}
-                      category={product.category}
-                      seller={{
-                        id: product.profiles?.id || "",
-                        name:
-                          product.profiles?.company_name ||
-                          `${product.profiles?.first_name || ""} ${product.profiles?.last_name || ""}`.trim() ||
-                          "Usuario",
-                        rating: 4.5,
-                        verified: true,
-                      }}
-                      description={product.description || ""}
-                      isFavorite={favorites.includes(product.id)}
-                      onToggleFavorite={() => toggleFavorite(product.id)}
-                    />
+                    <div key={product.id} className="relative">
+                      {/* 🟧 Overlay RESERVADO bien visible */}
+                      {product.reserved && (
+                        <div className="absolute left-0 top-0 z-10">
+                          <div className="bg-amber-600 text-white text-xs font-bold px-3 py-1 rounded-br-xl">
+                            RESERVADO
+                          </div>
+                        </div>
+                      )}
+
+                      <ProductCard
+                        id={product.id}
+                        title={product.title}
+                        price={`€${nPrice(product)}`}
+                        location={product.location || "No especificada"}
+                        image={product.images?.[0] || ""}
+                        category={product.category}
+                        seller={{
+                          id: product.seller?.id || "",
+                          name:
+                            product.seller?.company_name ||
+                            `${product.seller?.first_name || ""} ${product.seller?.last_name || ""}`.trim() ||
+                            "Usuario",
+                          rating: 4.5,
+                          verified: true,
+                        }}
+                        description={product.description || ""}
+                        isFavorite={favorites.includes(product.id)}
+                        onToggleFavorite={() => toggleFavorite(product.id)}
+                      />
+                    </div>
                   ))}
                 </div>
 

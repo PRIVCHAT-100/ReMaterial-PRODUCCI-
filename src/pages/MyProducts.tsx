@@ -50,7 +50,7 @@ const MyProducts = () => {
         .eq('seller_id', user?.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+    if (error) throw error;
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -208,10 +208,12 @@ const MyProducts = () => {
                     >
                       Ver
                     </Button>
+                    {/* 🔧 EDIT: ahora va al editor real y pasa el producto por state */}
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => navigate(`/sell?edit=${product.id}`)}
+                      onClick={() => navigate(`/product/${product.id}/edit`, { state: { product } })}
+                      title="Editar"
                     >
                       <Edit3 className="h-4 w-4" />
                     </Button>

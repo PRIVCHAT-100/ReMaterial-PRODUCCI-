@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
@@ -14,6 +14,7 @@ import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import ConversationActions from "@/features/chat/ConversationActions";
 import { markAsRead, getUnreadTotals, getUnreadForUser } from "@/features/chat/chatApi";
+import OfferCard from "@/components/OfferCard";
 
 const Messages = () => {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ const Messages = () => {
   const [conversations, setConversations] = useState<any[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
+  const [offers, setOffers] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -30,25 +32,22 @@ const Messages = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [unreadTotals, setUnreadTotals] = useState({ productTotal: 0, generalTotal: 0 });
 
-  // Refs (únicos)
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
   const messageChannelRef = useRef<any>(null);
+  const offersChannelRef = useRef<any>(null);
   const justOpenedRef = useRef(false);
 
-  // 👉 Refs para mantener la posición de la PÁGINA (no el chat)
   const outerScrollPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const restoreOnConversationRef = useRef(false);
   const restoreOnTabRef = useRef(false);
 
-  // === Helper: ordenar por última actividad (updated_at DESC) ===
   const sortByUpdated = (list: any[]) =>
     [...list].sort(
       (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     );
 
-  // Mantener la PÁGINA quieta mientras el chat auto-desplaza por envíos/entrantes
   const withWindowScrollFreeze = (fn: () => void) => {
     const x = window.scrollX;
     const y = window.scrollY;
@@ -59,7 +58,6 @@ const Messages = () => {
     });
   };
 
-  // --- Scroll handler del área de mensajes ---
   const handleMessagesScroll = () => {
     const el = messagesContainerRef.current;
     if (!el) return;
@@ -68,7 +66,6 @@ const Messages = () => {
     if (el.scrollTop === 0) loadOlderMessages();
   };
 
-  // --- Scroll al fondo (robusto, solo dentro del chat) ---
   const scrollToBottom = (smooth = true) => {
     const el = messagesContainerRef.current;
     const anchor = bottomAnchorRef.current;
@@ -115,25 +112,69 @@ const Messages = () => {
     }
   };
 
-  // Carga conversaciones + deep link
+  // Cargar conversaciones + deep links seller/product
   useEffect(() => {
     if (!user) return;
     fetchConversations();
+
     const sellerId = searchParams.get("seller");
     const productId = searchParams.get("product");
     if (sellerId) startConversation(sellerId, productId);
+
     return () => {
       if (messageChannelRef.current) supabase.removeChannel(messageChannelRef.current);
+      if (offersChannelRef.current) supabase.removeChannel(offersChannelRef.current);
     };
   }, [user, searchParams]);
 
-  // Suscripción realtime a mensajes de la conversación seleccionada
+  // Deep link: /messages?conversation=<id>
+  useEffect(() => {
+    if (!user) return;
+    const cid = searchParams.get("conversation");
+    if (!cid) return;
+    if (selectedConversation?.id === cid) return;
+
+    const existing = conversations.find(c => c.id === cid);
+    if (existing) {
+      selectConversation(existing);
+      return;
+    }
+
+    (async () => {
+      try {
+        const { data: c } = await supabase
+          .from("conversations")
+          .select("*")
+          .eq("id", cid)
+          .maybeSingle();
+        if (!c) return;
+        if (c.buyer_id !== user.id && c.seller_id !== user.id) return;
+
+        const { data: buyer } = await supabase.from("profiles").select("*").eq("id", c.buyer_id).single();
+        const { data: seller } = await supabase.from("profiles").select("*").eq("id", c.seller_id).single();
+        let product = null;
+        if (c.product_id) {
+          const { data: prod } = await supabase.from("products").select("*").eq("id", c.product_id).single();
+          product = prod;
+        }
+        const convWithData = { ...c, buyer, seller, product };
+        setConversations(prev => sortByUpdated([convWithData, ...prev.filter(x => x.id !== c.id)]));
+        selectConversation(convWithData);
+      } catch (e) {
+        console.error("Error loading conversation by id:", e);
+      }
+    })();
+  }, [searchParams, conversations, user, selectedConversation]);
+
+  // Suscripción realtime a la conversación (mensajes + ofertas)
   useEffect(() => {
     if (!selectedConversation) return;
     justOpenedRef.current = true;
     isAtBottomRef.current = true;
     fetchMessages(selectedConversation.id);
+    fetchOffers(selectedConversation.id);
 
+    // Mensajes
     messageChannelRef.current = supabase
       .channel("messages")
       .on(
@@ -148,12 +189,11 @@ const Messages = () => {
           const newMsg = payload.new;
           setMessages(prev => [...prev, newMsg]);
 
-          // 👇 mover el chat activo arriba (última actividad) sin tocar nada más
+          // Bump conversación
           setConversations(prev => {
             const idx = prev.findIndex(c => c.id === selectedConversation.id);
             if (idx === -1) return prev;
             const copy = [...prev];
-            // si viene created_at del mensaje, úsalo como referencia; si no, Date.now()
             const bumpTime = new Date(newMsg?.created_at ?? Date.now()).toISOString();
             copy[idx] = { ...copy[idx], updated_at: bumpTime };
             return sortByUpdated(copy);
@@ -183,20 +223,72 @@ const Messages = () => {
       )
       .subscribe();
 
+    // Ofertas (INSERT/UPDATE)
+    offersChannelRef.current = supabase
+      .channel("offers")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "offers",
+          filter: `conversation_id=eq.${selectedConversation.id}`,
+        },
+        async (payload) => {
+          const ofr = payload.new as any;
+          setOffers(prev => {
+            const exists = prev.find((o) => o.id === ofr.id);
+            if (exists) return prev;
+            // mantener orden cronológico ascendente en estado
+            const next = [...prev, ofr].sort(
+              (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+            return next;
+          });
+
+          // Bump conversación y autoscroll si procede
+          setConversations(prev => {
+            const idx = prev.findIndex(c => c.id === selectedConversation.id);
+            if (idx === -1) return prev;
+            const copy = [...prev];
+            const bumpTime = new Date(ofr?.created_at ?? Date.now()).toISOString();
+            copy[idx] = { ...copy[idx], updated_at: bumpTime };
+            return sortByUpdated(copy);
+          });
+
+          if (isAtBottomRef.current) {
+            requestAnimationFrame(() => withWindowScrollFreeze(() => scrollToBottom(true)));
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "offers",
+          filter: `conversation_id=eq.${selectedConversation.id}`,
+        },
+        (payload) => {
+          const ofr = payload.new as any;
+          setOffers(prev => prev.map((o) => (o.id === ofr.id ? { ...o, ...ofr } : o)));
+        }
+      )
+      .subscribe();
+
     return () => {
       if (messageChannelRef.current) supabase.removeChannel(messageChannelRef.current);
+      if (offersChannelRef.current) supabase.removeChannel(offersChannelRef.current);
     };
   }, [selectedConversation, user?.id, toast]);
 
-  // ✅ Autoscroll del CHAT al abrir (no toca la página)
   useLayoutEffect(() => {
     if (justOpenedRef.current) {
       scrollToBottom(false);
       justOpenedRef.current = false;
     }
-  }, [messages]);
+  }, [messages]); // al cargar mensajes iniciales
 
-  // ✅ Restaurar posición de la PÁGINA al cambiar de conversación
   useLayoutEffect(() => {
     if (!restoreOnConversationRef.current) return;
     const { x, y } = outerScrollPosRef.current;
@@ -205,7 +297,6 @@ const Messages = () => {
     restoreOnConversationRef.current = false;
   }, [selectedConversation]);
 
-  // ✅ Restaurar posición de la PÁGINA al cambiar de pestaña (Productos/Generales/Archivados)
   useLayoutEffect(() => {
     if (!restoreOnTabRef.current) return;
     const { x, y } = outerScrollPosRef.current;
@@ -214,7 +305,6 @@ const Messages = () => {
     restoreOnTabRef.current = false;
   }, [activeTab]);
 
-  // --- Data ---
   const fetchConversations = async () => {
     try {
       const { data, error } = await supabase
@@ -222,7 +312,7 @@ const Messages = () => {
         .select("*")
         .or(`buyer_id.eq.${user?.id},seller_id.eq.${user?.id}`)
         .order("updated_at", { ascending: false });
-    if (error) throw error;
+      if (error) throw error;
 
       const withData = await Promise.all(
         (data || []).map(async (c: any) => {
@@ -237,7 +327,6 @@ const Messages = () => {
         })
       );
 
-      // ⬅️ siempre guardamos ordenado por updated_at DESC
       setConversations(sortByUpdated(withData));
       if (user?.id) {
         try {
@@ -252,7 +341,20 @@ const Messages = () => {
     }
   };
 
-  // 🔔 Reordenar lista en tiempo real si una conversación se actualiza o se crea
+  const fetchOffers = async (conversationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("offers")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      setOffers(data || []);
+    } catch (err) {
+      console.error("Error fetching offers:", err);
+    }
+  };
+
   useEffect(() => {
     if (!user?.id) return;
 
@@ -288,7 +390,6 @@ const Messages = () => {
         },
         async (payload) => {
           const c = payload.new as any;
-          // completar buyer/seller/product como en fetchConversations
           const { data: buyer } = await supabase.from("profiles").select("*").eq("id", c.buyer_id).single();
           const { data: seller } = await supabase.from("profiles").select("*").eq("id", c.seller_id).single();
           let product = null;
@@ -335,6 +436,7 @@ const Messages = () => {
         justOpenedRef.current = true;
         isAtBottomRef.current = true;
         fetchMessages(existing.id);
+        fetchOffers(existing.id);
         return;
       }
 
@@ -357,6 +459,7 @@ const Messages = () => {
       setSelectedConversation(convWithData);
       setConversations(prev => sortByUpdated([convWithData, ...prev]));
       setMessages([]);
+      setOffers([]);
     } catch (err) {
       console.error("Error starting conversation:", err);
     }
@@ -404,7 +507,6 @@ const Messages = () => {
 
       setMessages(prev => [...prev, msg]);
 
-      // 👉 subimos el chat actual arriba inmediatamente
       setConversations(prev => {
         const idx = prev.findIndex(c => c.id === selectedConversation.id);
         if (idx === -1) return prev;
@@ -413,7 +515,6 @@ const Messages = () => {
         return sortByUpdated(copy);
       });
 
-      // Mantener la PÁGINA quieta mientras el chat hace autoscroll
       requestAnimationFrame(() => withWindowScrollFreeze(() => scrollToBottom(false)));
 
       setNewMessage("");
@@ -425,7 +526,6 @@ const Messages = () => {
     }
   };
 
-  // 🔒 Guardar/restaurar posición exacta de la página al cambiar de chat
   const selectConversation = async (c: any) => {
     outerScrollPosRef.current = { x: window.scrollX, y: window.scrollY };
     restoreOnConversationRef.current = true;
@@ -434,6 +534,7 @@ const Messages = () => {
     justOpenedRef.current = true;
     isAtBottomRef.current = true;
     fetchMessages(c.id);
+    fetchOffers(c.id);
 
     try {
       if (user?.id) {
@@ -444,14 +545,12 @@ const Messages = () => {
     } catch {}
   };
 
-  // 🔒 Guardar/restaurar posición exacta de la página al cambiar de pestaña
   const handleTabChange = (v: "product" | "general" | "archived") => {
     outerScrollPosRef.current = { x: window.scrollX, y: window.scrollY };
     restoreOnTabRef.current = true;
     setActiveTab(v);
   };
 
-  // Filtro de conversaciones
   const filteredConversations = conversations.filter((c) => {
     const isBuyer = c.buyer_id === user?.id;
 
@@ -481,6 +580,25 @@ const Messages = () => {
     );
   });
 
+  // 🔗 Línea temporal unificada: mensajes + ofertas
+  const timeline = useMemo(() => {
+    const msgItems = messages.map((m) => ({
+      kind: "message" as const,
+      created_at: m.created_at,
+      id: `msg-${m.id}`,
+      data: m,
+    }));
+    const offerItems = offers.map((o) => ({
+      kind: "offer" as const,
+      created_at: o.created_at,
+      id: `offer-${o.id}`,
+      data: o,
+    }));
+    return [...msgItems, ...offerItems].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  }, [messages, offers]);
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background">
@@ -501,7 +619,6 @@ const Messages = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      {/* ⛔ Evita “scroll anchoring” del navegador en este bloque */}
       <div className="container mx-auto px-4 py-8" style={{ overflowAnchor: "none" as any }}>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Mensajes</h1>
@@ -574,7 +691,6 @@ const Messages = () => {
                                 {isCurrentUserBuyer ? "Comprando" : "Vendiendo"}
                               </Badge>
 
-                              {/* Silenciado */}
                               {(() => {
                                 const isBuyer = c.buyer_id === user.id;
                                 const mutedUntil = isBuyer ? c.muted_until_buyer : c.muted_until_seller;
@@ -586,7 +702,6 @@ const Messages = () => {
                                 ) : null;
                               })()}
 
-                              {/* No leídos por conversación */}
                               {(() => {
                                 const unread = getUnreadForUser(c, user.id);
                                 return unread > 0 ? <Badge className="ml-2">{unread}</Badge> : null;
@@ -662,18 +777,20 @@ const Messages = () => {
                     className="flex-1 p-4 overflow-y-auto overscroll-contain"
                   >
                     <div className="space-y-4">
-                      {messages.map((m: any) => {
-                        const mine = m.sender_id === user.id;
-                        return (
-                          <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${mine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                              <p className="text-sm">{m.content}</p>
-                              <p className="text-xs opacity-70 mt-1">{new Date(m.created_at).toLocaleTimeString()}</p>
+                      {/* Timeline unificada */}
+                      {timeline.map((item) =>
+                        item.kind === "offer" ? (
+                          <OfferCard key={item.id} offer={item.data} />
+                        ) : (
+                          <div key={item.id} className={`flex ${item.data.sender_id === user.id ? "justify-end" : "justify-start"}`}>
+                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${item.data.sender_id === user.id ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                              <p className="text-sm whitespace-pre-line">{item.data.content}</p>
+                              <p className="text-xs opacity-70 mt-1">{new Date(item.data.created_at).toLocaleTimeString()}</p>
                             </div>
                           </div>
-                        );
-                      })}
-                      {/* Ancla inferior con 1px de altura y margen de scroll para evitar cortes */}
+                        )
+                      )}
+
                       <div ref={bottomAnchorRef} style={{ height: 1, scrollMarginBottom: 16 }} />
                     </div>
                   </CardContent>
@@ -712,4 +829,3 @@ const Messages = () => {
 };
 
 export default Messages;
-

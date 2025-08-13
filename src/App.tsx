@@ -26,6 +26,7 @@ import RepairData from "./pages/RepairData";
 import CompanyProfile from "./pages/CompanyProfile";
 import Settings from "./pages/Settings"; // ← NUEVO
 import Category from "@/pages/Category";
+import EditProduct from "@/pages/EditProduct"
 
 const queryClient = new QueryClient();
 
@@ -72,7 +73,17 @@ const AppRoutes = () => {
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/about" element={<About />} />
       <Route path="/c/:cat" element={<Category />} />
-    <Route path="/c/:cat/:sub" element={<Category />} />
+      <Route path="/c/:cat/:sub" element={<Category />} />
+
+      {/* 🔒 Editar producto ahora es PRIVADO */}
+      <Route
+        path="/product/:id/edit"
+        element={
+          <PrivateRoute>
+            <EditProduct />
+          </PrivateRoute>
+        }
+      />
 
       {/* Rutas protegidas */}
       <Route
