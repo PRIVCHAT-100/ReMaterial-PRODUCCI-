@@ -104,20 +104,11 @@ export default function CounterOfferDialog({ open, onOpenChange, product }: Coun
 
       if (offerErr) throw offerErr;
 
-      // 2) Mensaje resumen al chat
-      const summary = `Contraoferta enviada
-Precio ofrecido: €${p.toFixed(2)}${q ? `\nCantidad: ${q}` : ""}${message ? `\nMensaje: ${message}` : ""}
-Oferta #${offer!.id}`;
-      await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        content: summary,
-      });
-
-      toast({ title: "Contraoferta enviada", description: "Se ha notificado al vendedor en el chat" });
+      // ❌ Sin mensaje de sistema en el chat
+      // ❌ Sin toast de éxito
       onOpenChange(false);
 
-      // 3) Ir al chat (ahora con query param, no con ruta /:id)
+      // 2) Ir al chat (ahora con query param, no con ruta /:id)
       navigate(`/messages?conversation=${conversationId}`);
     } catch (err: any) {
       console.error(err);

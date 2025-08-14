@@ -122,8 +122,14 @@ const Messages = () => {
     if (sellerId) startConversation(sellerId, productId);
 
     return () => {
-      if (messageChannelRef.current) supabase.removeChannel(messageChannelRef.current);
-      if (offersChannelRef.current) supabase.removeChannel(offersChannelRef.current);
+      try {
+        if (messageChannelRef.current) supabase.removeChannel(messageChannelRef.current);
+      } catch {}
+      try {
+        if (offersChannelRef.current) supabase.removeChannel(offersChannelRef.current);
+      } catch {}
+      messageChannelRef.current = null;
+      offersChannelRef.current = null;
     };
   }, [user, searchParams]);
 
@@ -169,14 +175,26 @@ const Messages = () => {
   // Suscripción realtime a la conversación (mensajes + ofertas)
   useEffect(() => {
     if (!selectedConversation) return;
+
+    // 🧹 Cierra canales previos ANTES de abrir los nuevos
+    try {
+      if (messageChannelRef.current) supabase.removeChannel(messageChannelRef.current);
+    } catch {}
+    try {
+      if (offersChannelRef.current) supabase.removeChannel(offersChannelRef.current);
+    } catch {}
+    messageChannelRef.current = null;
+    offersChannelRef.current = null;
+
     justOpenedRef.current = true;
     isAtBottomRef.current = true;
     fetchMessages(selectedConversation.id);
     fetchOffers(selectedConversation.id);
 
-    // Mensajes
+    // Mensajes (canal único por conversación)
+    const msgChannelName = `messages-${selectedConversation.id}`;
     messageChannelRef.current = supabase
-      .channel("messages")
+      .channel(msgChannelName)
       .on(
         "postgres_changes",
         {
@@ -223,9 +241,10 @@ const Messages = () => {
       )
       .subscribe();
 
-    // Ofertas (INSERT/UPDATE)
+    // Ofertas (INSERT/UPDATE) - canal único por conversación
+    const offersChannelName = `offers-${selectedConversation.id}`;
     offersChannelRef.current = supabase
-      .channel("offers")
+      .channel(offersChannelName)
       .on(
         "postgres_changes",
         {
@@ -239,14 +258,12 @@ const Messages = () => {
           setOffers(prev => {
             const exists = prev.find((o) => o.id === ofr.id);
             if (exists) return prev;
-            // mantener orden cronológico ascendente en estado
             const next = [...prev, ofr].sort(
               (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             );
             return next;
           });
 
-          // Bump conversación y autoscroll si procede
           setConversations(prev => {
             const idx = prev.findIndex(c => c.id === selectedConversation.id);
             if (idx === -1) return prev;
@@ -277,8 +294,21 @@ const Messages = () => {
       .subscribe();
 
     return () => {
-      if (messageChannelRef.current) supabase.removeChannel(messageChannelRef.current);
-      if (offersChannelRef.current) supabase.removeChannel(offersChannelRef.current);
+      try {
+        if (messageChannelRef.current) supabase.removeChannel(messageChannelRef.current);
+      } catch {}
+      try {
+        if (offersChannelRef.current) supabase.removeChannel(offersChannelRef.current);
+      } catch {}
+      messageChannelRef.current = null;
+      offersChannelRef.current = null;
+
+      if (restoreOnConversationRef.current) {
+        const { x, y } = outerScrollPosRef.current;
+        window.scrollTo(x, y);
+        requestAnimationFrame(() => window.scrollTo(x, y));
+        restoreOnConversationRef.current = false;
+      }
     };
   }, [selectedConversation, user?.id, toast]);
 

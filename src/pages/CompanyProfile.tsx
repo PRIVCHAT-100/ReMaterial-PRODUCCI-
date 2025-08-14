@@ -27,7 +27,7 @@ const CompanyProfile = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
 
-  // 👇 añadido para “Volver al producto”
+  // 👇 para “Volver al producto”
   const navigate = useNavigate();
   const location = useLocation() as { state?: { from?: string } };
   const backToProduct = location.state?.from; // ej. "/product/xxxxx"
@@ -51,7 +51,7 @@ const CompanyProfile = () => {
     try {
       setLoading(true);
       
-      // Fetch company profile
+      // Perfil de empresa
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -60,12 +60,12 @@ const CompanyProfile = () => {
 
       if (profileError) throw profileError;
       
-      // Fetch company products
+      // Productos de la empresa (desambiguando la relación con profiles)
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select(`
           *,
-          profiles (
+          seller:profiles!products_seller_id_fkey (
             id,
             first_name,
             last_name,
@@ -85,11 +85,11 @@ const CompanyProfile = () => {
         rating: 4.5, // Mock rating
         reviews: Math.floor(Math.random() * 50) + 5, // Mock reviews
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching company data:', error);
       toast({
         title: "Error",
-        description: "No se pudo cargar la información de la empresa",
+        description: error?.message || "No se pudo cargar la información de la empresa",
         variant: "destructive",
       });
     } finally {
@@ -275,7 +275,7 @@ const CompanyProfile = () => {
 
                 {/* Action Buttons */}
                 <div className="space-y-2">
-                  {/* 👇 NUEVO: aparece solo si venías desde una ficha de producto */}
+                  {/* Aparece solo si venías desde una ficha de producto */}
                   {backToProduct && (
                     <Button 
                       variant="outline"
@@ -349,8 +349,11 @@ const CompanyProfile = () => {
                         image={product.images?.[0] || '/placeholder.svg'}
                         category={product.category}
                         seller={{
-                          id: product.profiles?.id || '',
-                          name: product.profiles?.company_name || `${product.profiles?.first_name} ${product.profiles?.last_name}` || 'Vendedor',
+                          id: product.seller?.id || '',
+                          name:
+                            product.seller?.company_name ||
+                            `${product.seller?.first_name || ""} ${product.seller?.last_name || ""}`.trim() ||
+                            'Vendedor',
                           rating: 4.5,
                           verified: true
                         }}
