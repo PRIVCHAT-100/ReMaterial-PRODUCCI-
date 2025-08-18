@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Menu, User, Plus, Search as SearchIcon, ArrowRight } from "lucide-react";
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +15,7 @@ import {
 } from "@/components/ui/sheet";
 
 const Header = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,7 +79,7 @@ const Header = () => {
                 </span>
                 <Input
                   type="text"
-                  placeholder="¿Qué material buscas? Ej: mármol, acero, textil..."
+                  placeholder={`${t("search_placeholder")}`}
                   className="pl-10 h-12"
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
@@ -107,6 +110,7 @@ const Header = () => {
 
           {/* Acciones + menú móvil */}
           <div className="flex items-center space-x-2">
+            <LanguageSwitcher />
             {user ? (
               <UserMenu />
             ) : (
@@ -203,7 +207,7 @@ const Header = () => {
                                 `${linkBase} ${isActive ? linkActive : ""} ${linkHover}`
                               }
                             >
-                              Entrar / Registrarse
+                              {t('login')}
                             </NavLink>
                           </SheetClose>
                         </li>
@@ -234,7 +238,7 @@ const Header = () => {
                 </span>
                 <Input
                   type="text"
-                  placeholder="¿Qué material buscas? Ej: mármol, acero, textil..."
+                  placeholder={`${t("search_placeholder")}`}
                   className="pl-10 h-12"
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}

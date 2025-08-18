@@ -12,6 +12,7 @@ import {
   MapPin, 
   Calendar, 
   Package, 
+  Truck,
   MessageSquare, 
   Heart, 
   Share2, 
@@ -356,6 +357,10 @@ const ProductDetail = () => {
                 <div className="flex items-center gap-2">
                   <Package className="h-4 w-4" />
                   Cantidad: {product.quantity} {product.unit}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4" />
+                  {product.shipping_available ? "Envío disponible" : "Sin envío"}
                 </div>
               </div>
             </div>

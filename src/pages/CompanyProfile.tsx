@@ -348,6 +348,7 @@ const CompanyProfile = () => {
                         location={product.location || 'No especificada'}
                         image={product.images?.[0] || '/placeholder.svg'}
                         category={product.category}
+                        shippingAvailable={!!product.shipping_available}
                         seller={{
                           id: product.seller?.id || '',
                           name:

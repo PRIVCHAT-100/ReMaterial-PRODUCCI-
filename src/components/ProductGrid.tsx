@@ -43,6 +43,7 @@ interface Product {
   // Reserva
   reserved?: boolean;
   reserved_price?: number | null;
+  shipping_available?: boolean;
 }
 
 const SECTOR_TO_CATEGORIES: Record<string, string[]> = {
@@ -82,6 +83,7 @@ const ProductGrid = ({
     quantityMax: "",
     listedWithin: "any",
     withImage: false,
+    shippingAvailable: false,
   });
 
   const { user } = useAuth();
@@ -96,8 +98,7 @@ const ProductGrid = ({
 
   const fetchProducts = async () => {
     try {
-      // ⚠️ Desambiguamos el embed de perfiles usando el nombre de la FK por defecto:
-      // products_seller_id_fkey (si tu FK tiene otro nombre, cámbialo aquí)
+      // Construimos query base
       let query = supabase
         .from("products")
         .select(`
@@ -108,19 +109,74 @@ const ProductGrid = ({
             last_name,
             company_name
           )
-        `)
-        .eq("status", "active");
+        `);
 
+      // Filtro por estado activo (si lo usas). Quita este filtro si tu BD no tiene 'active'
+      query = query.eq("status", "active");
+
+      // Búsqueda por texto (solo si hay columna search_vector)
       if (searchQuery && searchQuery.trim()) {
-        query = query.textSearch("search_vector", searchQuery.trim(), {
-          type: "websearch",
-          config: "spanish",
-        });
+        try {
+          query = query.textSearch("search_vector", searchQuery.trim(), { type: "websearch" });
+        } catch (_e) {
+          console.warn("[search] search_vector no disponible; omito textSearch");
+        }
       }
 
-      const { data, error } = await query.order("created_at", { ascending: false });
+      // Filtros por categoría/subcategoría (los tuyos siguen iguales),
+      // pero ⚠️ NO filtrar cuando es "all"
+      const legacyMap: Record<string, string> = {
+        agriculture: "agricultura",
+        construction: "construccion",
+        textile: "textil",
+        metal: "metalurgia",
+        wood: "madera",
+        decoration: "decoracion",
+        plastic: "plastico",
+        electronics: "electronica",
+      };
+      const normalized = (legacyMap[selectedCategory] || selectedCategory || "").toLowerCase().trim();
 
-      if (error) throw error;
+      if (normalized && normalized !== "all") {
+        // Nota: ajusta al nombre real de tu columna de categoría si difiere
+        query = query.or(`category.eq.${normalized},main_category.eq.${normalized}`);
+      }
+
+      // Orden por defecto
+      query = query.order("created_at", { ascending: false });
+
+      // Ejecutamos
+      let { data, error } = await query;
+
+      // Si hay error por relación ambigua/incorrecta entre products y profiles, reintenta con alternativas
+      if (error && /relationship|embedding/i.test(error.message || "")) {
+        console.warn("[supabase] FK por defecto no válida; reintento con products_user_id_fkey");
+        const retry1 = await supabase
+          .from("products")
+          .select(`
+            *,
+            seller:profiles!products_user_id_fkey (
+              id, first_name, last_name, company_name
+            )
+          `)
+          .eq("status", "active")
+          .order("created_at", { ascending: false });
+        if (!retry1.error) {
+          data = retry1.data;
+        } else {
+          console.warn("[supabase] Reintento sin embed de profiles");
+          const retry2 = await supabase
+            .from("products")
+            .select(`*`)
+            .eq("status", "active")
+            .order("created_at", { ascending: false });
+          if (retry2.error) throw retry2.error;
+          data = retry2.data;
+        }
+      } else if (error) {
+        throw error;
+      }
+
       setProducts(data || []);
     } catch (err: any) {
       console.error("Error fetching products:", err);
@@ -128,8 +184,8 @@ const ProductGrid = ({
         title: "Error",
         description:
           err?.message?.includes("relationship")
-            ? "Hay varias relaciones entre products y profiles. Ya lo hemos desambiguado para el vendedor. Si tu FK tiene otro nombre, avísame y lo ajusto."
-            : "No se pudieron cargar los productos",
+            ? "Relación entre products y profiles inválida. Ya probé alternativas; revisa el nombre de la FK en tu BD."
+            : (err?.message || "No se pudieron cargar los productos"),
         variant: "destructive",
       });
     } finally {
@@ -278,6 +334,7 @@ const ProductGrid = ({
       }
 
       if (filters.withImage && !p.images?.[0]) return false;
+      if (filters.shippingAvailable && !p.shipping_available) return false;
 
       return true;
     });
@@ -321,6 +378,7 @@ const ProductGrid = ({
       quantityMax: "",
       listedWithin: "any",
       withImage: false,
+      shippingAvailable: false,
     });
 
   const handlePageChange = (next: number) => {
@@ -503,6 +561,7 @@ const ProductGrid = ({
                           verified: true,
                         }}
                         description={product.description || ""}
+                        shippingAvailable={!!product.shipping_available}
                         isFavorite={favorites.includes(product.id)}
                         onToggleFavorite={() => toggleFavorite(product.id)}
                       />

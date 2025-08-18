@@ -205,7 +205,9 @@ const Messages = () => {
         },
         async (payload) => {
           const newMsg = payload.new;
-          setMessages(prev => [...prev, newMsg]);
+
+          // ⛔ evita duplicar si ya está en el estado
+          setMessages(prev => (prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg]));
 
           // Bump conversación
           setConversations(prev => {
@@ -335,6 +337,7 @@ const Messages = () => {
     restoreOnTabRef.current = false;
   }, [activeTab]);
 
+  // 🛠 FIX: harden fetchConversations para que un error en unread no rompa toda la lista
   const fetchConversations = async () => {
     try {
       const { data, error } = await supabase
@@ -344,8 +347,13 @@ const Messages = () => {
         .order("updated_at", { ascending: false });
       if (error) throw error;
 
+      // 🛠 FIX: por si acaso, filtramos localmente también a las que pertenecen al usuario
+      const onlyMine = (data || []).filter(
+        (c: any) => c.buyer_id === user?.id || c.seller_id === user?.id
+      );
+
       const withData = await Promise.all(
-        (data || []).map(async (c: any) => {
+        (onlyMine).map(async (c: any) => {
           const { data: buyer } = await supabase.from("profiles").select("*").eq("id", c.buyer_id).single();
           const { data: seller } = await supabase.from("profiles").select("*").eq("id", c.seller_id).single();
           let product = null;
@@ -353,7 +361,16 @@ const Messages = () => {
             const { data: prod } = await supabase.from("products").select("*").eq("id", c.product_id).single();
             product = prod;
           }
-          return { ...c, buyer, seller, product };
+
+          // 🛠 FIX: unreadForMe protegido → si el helper lanza, usamos 0
+          let unreadForMe = 0;
+          try {
+            unreadForMe = await getUnreadForUser(c.id, user!.id);
+          } catch {
+            unreadForMe = 0;
+          }
+
+          return { ...c, buyer, seller, product, unreadForMe };
         })
       );
 
@@ -366,6 +383,7 @@ const Messages = () => {
       }
     } catch (err) {
       console.error("Error fetching conversations:", err);
+      // mantenemos el toast de error existente si lo tenías, o puedes dejarlo en consola
     } finally {
       setLoading(false);
     }
@@ -732,10 +750,8 @@ const Messages = () => {
                                 ) : null;
                               })()}
 
-                              {(() => {
-                                const unread = getUnreadForUser(c, user.id);
-                                return unread > 0 ? <Badge className="ml-2">{unread}</Badge> : null;
-                              })()}
+                              {/* usamos el valor precalculado */}
+                              {c.unreadForMe > 0 && <Badge className="ml-2">{c.unreadForMe}</Badge>}
 
                               <ConversationActions
                                 conversation={c}

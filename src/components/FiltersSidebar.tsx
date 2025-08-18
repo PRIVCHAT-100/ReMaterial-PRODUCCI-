@@ -9,6 +9,7 @@ export type FiltersState = {
   quantityMax: string;
   listedWithin: "any" | "7" | "30" | "90";
   withImage: boolean;
+  shippingAvailable: boolean;
 };
 
 interface FiltersSidebarProps {
@@ -135,6 +136,19 @@ export default function FiltersSidebar({
             className="h-4 w-4"
           />
           Solo con imagen
+          </label>
+        </section>
+
+        {/* Disponible para envíos */}
+        <section className="space-y-3">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={filters.shippingAvailable}
+            onChange={(e) => onChange({ shippingAvailable: e.target.checked })}
+            className="h-4 w-4"
+          />
+          Disponible para envíos
         </label>
       </section>
 

@@ -18,7 +18,8 @@ interface ProductCardProps {
     name: string;
     rating: number;
     verified: boolean;
-  };
+  
+  shippingAvailable?: boolean;};
   description: string;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
@@ -76,6 +77,11 @@ const ProductCard = ({
           <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
             {category}
           </Badge>
+          {typeof shippingAvailable !== "undefined" && (
+            <Badge className="absolute top-10 left-2" variant="secondary">
+              {shippingAvailable ? "Envío" : "Sin envío"}
+            </Badge>
+          )}
         </div>
       </CardHeader>
 

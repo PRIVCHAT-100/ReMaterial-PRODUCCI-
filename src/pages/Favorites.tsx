@@ -14,15 +14,13 @@ const Favorites = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const [favorites, setFavorites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchFavorites();
-    } else {
-      setLoading(false);
-    }
+    fetchFavorites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchFavorites = async () => {
@@ -45,7 +43,7 @@ const Favorites = () => {
             location,
             description,
             created_at,
-            profiles (
+            seller:profiles!products_seller_id_fkey (
               first_name,
               last_name,
               company_name
@@ -100,11 +98,18 @@ const Favorites = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-48 bg-muted rounded-lg mb-4"></div>
-                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-muted rounded w-1/2"></div>
-              </div>
+              <Card key={i} className="overflow-hidden">
+                <div className="aspect-video bg-muted animate-pulse" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="h-6 bg-muted rounded animate-pulse w-2/3" />
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
+                    <div className="h-4 bg-muted rounded animate-pulse w-1/3" />
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
@@ -118,21 +123,24 @@ const Favorites = () => {
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Mis Favoritos</h1>
-          <p className="text-muted-foreground">Productos que has guardado para más tarde</p>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Tus Favoritos</h1>
+          <p className="text-muted-foreground">
+            Aquí encontrarás los productos que has guardado para ver más tarde.
+          </p>
         </div>
 
         {favorites.length === 0 ? (
           <Card>
-            <CardContent className="p-12 text-center">
-              <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No tienes favoritos</h3>
-              <p className="text-muted-foreground mb-6">
-                Explora productos y guarda los que más te interesen
+            <CardHeader>
+              <CardTitle>No tienes favoritos aún</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                Cuando marques un producto con <Heart className="inline h-4 w-4 mx-1" /> aparecerá aquí.
               </p>
-              <Button onClick={() => navigate('/')} type="button">
-                Explorar Productos
+              <Button onClick={() => navigate('/explore')}>
+                Explorar productos
               </Button>
             </CardContent>
           </Card>
@@ -165,31 +173,30 @@ const Favorites = () => {
                   </div>
                   
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg line-clamp-2">{product.title}</CardTitle>
-                    <Badge variant="secondary" className="w-fit">{product.category}</Badge>
+                    <CardTitle className="text-xl line-clamp-1">{product.title}</CardTitle>
                   </CardHeader>
-
-                  <CardContent className="pt-0">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="text-2xl font-bold text-primary">
-                        €{product.price}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {product.quantity} {product.unit}
-                      </div>
+                  
+                  <CardContent className="pt-0 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-2xl font-semibold">€{product.price}</div>
+                      <Badge variant="secondary" className="uppercase">{product.category}</Badge>
                     </div>
 
-                    {product.profiles && (
+                    <div className="text-sm text-muted-foreground">
+                      {product.location || "Ubicación no especificada"}
+                    </div>
+
+                    <div className="text-sm text-muted-foreground">
+                      🧮 {product.quantity} {product.unit}
+                    </div>
+
+                    {product.seller && (
                       <div className="text-sm text-muted-foreground mb-2">
-                        👤 {product.profiles.company_name || 
-                             `${product.profiles.first_name || ''} ${product.profiles.last_name || ''}`.trim() || 
+                        👤 {product.seller.company_name || 
+                             `${product.seller.first_name || ''} ${product.seller.last_name || ''}`.trim() || 
                              'Usuario'}
                       </div>
                     )}
-
-                    <div className="text-sm text-muted-foreground mb-4">
-                      📍 {product.location}
-                    </div>
 
                     <div className="flex gap-2">
                       <Button 

@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +32,9 @@ type Profile = {
   description?: string | null; // si usas "bio", cambia aquí y abajo
 };
 
-export default function Settings() {
+export default function Settings()
+{
+  const { t } = useTranslation(); {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -194,7 +198,19 @@ export default function Settings() {
           )}
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
+        <div className="container mx-auto px-0 py-0">
+  <Card className="mb-6">
+    <CardHeader>
+      <CardTitle>{t ? t("interface_language") : "Idioma de la interfaz"}</CardTitle>
+      <CardDescription>{t ? t("interface_language_desc") : "Selecciona el idioma de los textos predeterminados."}</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <LanguageSwitcher />
+    </CardContent>
+  </Card>
+</div>
+
+<Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="account" className="flex items-center gap-2">
               <User className="h-4 w-4" /> Cuenta
@@ -414,4 +430,5 @@ export default function Settings() {
       <Footer />
     </div>
   );
+}
 }

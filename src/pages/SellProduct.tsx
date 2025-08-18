@@ -39,6 +39,7 @@ const SellProduct = () => {
     condition: "new",
     allow_direct_purchase: true,
     specifications: {} as Record<string, string>,
+    shipping_available: false,
   });
 
   const categories = [
@@ -83,32 +84,27 @@ const SellProduct = () => {
   };
 
   const uploadImages = async (productId: string) => {
-    const uploadedUrls = [];
-    
+    const uploadedUrls = [] as string[];
     for (const image of images) {
       const fileName = `${productId}/${Date.now()}-${image.name}`;
       const { data, error } = await supabase.storage
         .from('product-images')
         .upload(fileName, image);
-      
       if (error) {
         console.error('Error uploading image:', error);
         continue;
       }
-      
       const { data: urlData } = supabase.storage
         .from('product-images')
         .getPublicUrl(fileName);
-      
       uploadedUrls.push(urlData.publicUrl);
     }
-    
     return uploadedUrls;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast({
         title: "Error",
@@ -137,6 +133,8 @@ const SellProduct = () => {
           specifications: formData.specifications,
           seller_id: user.id,
           status: 'active',
+          // 🆕 FIX: guardar disponibilidad de envío
+          shipping_available: formData.shipping_available,
         })
         .select()
         .single();
@@ -144,22 +142,16 @@ const SellProduct = () => {
       if (productError) throw productError;
 
       // Upload images if any
-      let imageUrls = [];
+      let imageUrls: string[] = [];
       if (images.length > 0) {
         imageUrls = await uploadImages(product.id);
-        
-        // Update product with image URLs
         await supabase
           .from('products')
           .update({ images: imageUrls })
           .eq('id', product.id);
       }
 
-      toast({
-        title: "¡Producto publicado!",
-        description: "Tu producto ha sido publicado exitosamente",
-      });
-
+      toast({ title: "¡Producto publicado!", description: "Tu producto ha sido publicado exitosamente" });
       navigate(`/product/${product.id}`);
     } catch (error: any) {
       console.error('Error creating product:', error);
@@ -356,42 +348,42 @@ const SellProduct = () => {
                     </div>
 
                     {images.length > 0 && (
-  <div>
-    {/* Carrusel: una imagen a la vez */}
-    <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
-      <img
-        src={URL.createObjectURL(images[(images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0)])}
-        alt={`Imagen ${(images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0)} + 1`}
-        className="absolute inset-0 h-full w-full object-cover"
-        draggable={false}
-      />
-      {images.length > 1 && (
-        <>
-          <button
-            type="button"
-            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/70 backdrop-blur px-2 py-2 border"
-            onClick={() => setCarouselIndex((prev) => (prev - 1 + images.length) % images.length)}
-            aria-label="Anterior"
-          >&lt;</button>
-          <button
-            type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/70 backdrop-blur px-2 py-2 border"
-            onClick={() => setCarouselIndex((prev) => (prev + 1) % images.length)}
-            aria-label="Siguiente"
-          >&gt;</button>
-          <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-2">
-            {images.map((_, i) => (
-              <span
-                key={i}
-                className={"h-1.5 w-1.5 rounded-full bg-white/50 " + (i === (images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0) ? "bg-white" : "")}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  </div>
-)}
+                      <div>
+                        {/* Carrusel: una imagen a la vez */}
+                        <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
+                          <img
+                            src={URL.createObjectURL(images[(images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0)])}
+                            alt={`Imagen ${(images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0)} + 1`}
+                            className="absolute inset-0 h-full w-full object-cover"
+                            draggable={false}
+                          />
+                          {images.length > 1 && (
+                            <>
+                              <button
+                                type="button"
+                                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/70 backdrop-blur px-2 py-2 border"
+                                onClick={() => setCarouselIndex((prev) => (prev - 1 + images.length) % images.length)}
+                                aria-label="Anterior"
+                              >&lt;</button>
+                              <button
+                                type="button"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/70 backdrop-blur px-2 py-2 border"
+                                onClick={() => setCarouselIndex((prev) => (prev + 1) % images.length)}
+                                aria-label="Siguiente"
+                              >&gt;</button>
+                              <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-2">
+                                {images.map((_, i) => (
+                                  <span
+                                    key={i}
+                                    className={"h-1.5 w-1.5 rounded-full bg-white/50 " + (i === (images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0) ? "bg-white" : "")}
+                                  />
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -412,6 +404,19 @@ const SellProduct = () => {
                     <Switch
                       checked={formData.allow_direct_purchase}
                       onCheckedChange={(checked) => handleInputChange('allow_direct_purchase', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="space-y-0.5">
+                      <Label>Disponible para envíos</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Indica si puedes enviar este producto
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.shipping_available}
+                      onCheckedChange={(checked) => handleInputChange('shipping_available', checked)}
                     />
                   </div>
                 </CardContent>
