@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type Mode = "producto" | "sector";
 
@@ -12,27 +13,27 @@ type ExploreCategoriesBarProps = {
 
 // Sectores (los mismos que pueden escoger las empresas)
 const SECTOR_OPTIONS = [
-  { value: "construccion", label: "Construcción" },
+  { value: "construccion", label: t('ui.construcci-n') },
   { value: "textil", label: "Textil" },
-  { value: "madera", label: "Madera" },
+  { value: "madera", label: t('ui.madera') },
   { value: "metalurgia", label: "Metalurgia" },
-  { value: "piedra", label: "Piedra y Mármol" },
-  { value: "otros", label: "Otros" },
+  { value: "piedra", label: t('ui.piedra-y-m-rmol') },
+  { value: "otros", label: t('ui.otros') },
 ];
 
 // Categorías de producto (ajústalas a las que usas al publicar productos)
 const PRODUCT_CATEGORY_OPTIONS = [
   { value: "metal", label: "Metal" },
-  { value: "madera", label: "Madera" },
-  { value: "plastico", label: "Plástico" },
-  { value: "piedra", label: "Piedra" },
+  { value: "madera", label: t('ui.madera') },
+  { value: "plastico", label: t('ui.pl-stico') },
+  { value: "piedra", label: t('ui.piedra') },
   { value: "textil", label: "Textil" },
-  { value: "vidrio", label: "Vidrio" },
-  { value: "papel-carton", label: "Papel/Cartón" },
-  { value: "electronica", label: "Electrónica" },
-  { value: "maquinaria", label: "Maquinaria" },
-  { value: "palets", label: "Palets" },
-  { value: "otros", label: "Otros" },
+  { value: "vidrio", label: t('ui.vidrio') },
+  { value: "papel-carton", label: t('ui.papel-cart-n') },
+  { value: "electronica", label: t('ui.electr-nica') },
+  { value: "maquinaria", label: t('ui.maquinaria') },
+  { value: "palets", label: t('ui.palets') },
+  { value: "otros", label: t('ui.otros') },
 ];
 
 export default function ExploreCategoriesBar({
@@ -41,6 +42,8 @@ export default function ExploreCategoriesBar({
   onCategoryChange,
   onModeChange,
 }: ExploreCategoriesBarProps) {
+  const { t } = useTranslation();
+
   const [localMode, setLocalMode] = useState<Mode>(mode);
 
   const options = localMode === "sector" ? SECTOR_OPTIONS : PRODUCT_CATEGORY_OPTIONS;

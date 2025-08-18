@@ -1,20 +1,23 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 
 const Terms = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-foreground mb-8">Términos y Condiciones</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-8">{t('ui.t-rminos-y-condiciones')}</h1>
           
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>1. Aceptación de los Términos</CardTitle>
+                <CardTitle>{t('ui.1-aceptaci-n-de-los-t-rminos')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
@@ -25,7 +28,7 @@ const Terms = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>2. Descripción del Servicio</CardTitle>
+                <CardTitle>{t('ui.2-descripci-n-del-servicio')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">
@@ -33,7 +36,7 @@ const Terms = () => {
                 </p>
                 <ul className="list-disc list-inside text-muted-foreground space-y-2">
                   <li>Facilitar transacciones entre usuarios registrados</li>
-                  <li>Proporcionar herramientas de comunicación</li>
+                  <li>{t('ui.proporcionar-herramientas-de-comunicaci-n')}</li>
                   <li>Ofrecer servicios de pago seguros</li>
                   <li>Mantener un marketplace organizado y confiable</li>
                 </ul>
@@ -48,7 +51,7 @@ const Terms = () => {
                 <div className="space-y-4 text-muted-foreground">
                   <p>Para utilizar nuestros servicios, debes:</p>
                   <ul className="list-disc list-inside space-y-2">
-                    <li>Proporcionar información precisa y actualizada</li>
+                    <li>{t('ui.proporcionar-informaci-n-precisa-y-actualizada')}</li>
                     <li>Mantener la confidencialidad de tu cuenta</li>
                     <li>Ser responsable de todas las actividades bajo tu cuenta</li>
                     <li>Notificar inmediatamente cualquier uso no autorizado</li>
@@ -65,18 +68,18 @@ const Terms = () => {
                 <div className="space-y-4 text-muted-foreground">
                   <h4 className="font-semibold text-foreground">Vendedores:</h4>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>Proporcionar descripciones precisas de los productos</li>
-                    <li>Garantizar la calidad y autenticidad de los materiales</li>
-                    <li>Cumplir con los términos de entrega acordados</li>
-                    <li>Mantener comunicación profesional con compradores</li>
+                    <li>{t('ui.proporcionar-descripciones-precisas-de-los-product')}</li>
+                    <li>{t('ui.garantizar-la-calidad-y-autenticidad-de-los-materi')}</li>
+                    <li>{t('ui.cumplir-con-los-t-rminos-de-entrega-acordados')}</li>
+                    <li>{t('ui.mantener-comunicaci-n-profesional-con-compradores')}</li>
                   </ul>
                   
                   <h4 className="font-semibold text-foreground mt-4">Compradores:</h4>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>Realizar pagos según los términos acordados</li>
-                    <li>Inspeccionar productos al momento de la entrega</li>
+                    <li>{t('ui.realizar-pagos-seg-n-los-t-rminos-acordados')}</li>
+                    <li>{t('ui.inspeccionar-productos-al-momento-de-la-entrega')}</li>
                     <li>Comunicar cualquier problema de manera oportuna</li>
-                    <li>Utilizar los materiales de manera responsable</li>
+                    <li>{t('ui.utilizar-los-materiales-de-manera-responsable')}</li>
                   </ul>
                 </div>
               </CardContent>
@@ -87,14 +90,14 @@ const Terms = () => {
                 <CardTitle>5. Prohibiciones</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">Está estrictamente prohibido:</p>
+                <p className="text-muted-foreground mb-4">{t('ui.est-estrictamente-prohibido')}</p>
                 <ul className="list-disc list-inside text-muted-foreground space-y-2">
-                  <li>Publicar contenido falso, engañoso o fraudulento</li>
-                  <li>Vender materiales peligrosos o ilegales</li>
-                  <li>Utilizar la plataforma para actividades no relacionadas con la venta de materiales</li>
+                  <li>{t('ui.publicar-contenido-falso-enga-oso-o-fraudulento')}</li>
+                  <li>{t('ui.vender-materiales-peligrosos-o-ilegales')}</li>
+                  <li>{t('ui.utilizar-la-plataforma-para-actividades-no-relacio')}</li>
                   <li>Interferir con el funcionamiento normal de la plataforma</li>
                   <li>Violar derechos de propiedad intelectual</li>
-                  <li>Acosar o amenazar a otros usuarios</li>
+                  <li>{t('ui.acosar-o-amenazar-a-otros-usuarios')}</li>
                 </ul>
               </CardContent>
             </Card>
@@ -105,12 +108,12 @@ const Terms = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 text-muted-foreground">
-                  <p>ReMaterial cobra una comisión por las transacciones exitosas:</p>
+                  <p>{t('ui.rematerial-cobra-una-comisi-n-por-las-transaccione')}</p>
                   <ul className="list-disc list-inside space-y-2">
-                    <li>Comisión del 3% sobre el valor de la transacción</li>
-                    <li>Procesamiento de pagos seguro a través de Stripe</li>
+                    <li>{t('ui.comisi-n-del-3-sobre-el-valor-de-la-transacci-n')}</li>
+                    <li>{t('ui.procesamiento-de-pagos-seguro-a-trav-s-de-stripe')}</li>
                     <li>Los pagos se liberan una vez confirmada la entrega</li>
-                    <li>Posibilidad de reembolsos según nuestra política</li>
+                    <li>{t('ui.posibilidad-de-reembolsos-seg-n-nuestra-pol-tica')}</li>
                   </ul>
                 </div>
               </CardContent>
@@ -118,7 +121,7 @@ const Terms = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>7. Limitación de Responsabilidad</CardTitle>
+                <CardTitle>{t('ui.7-limitaci-n-de-responsabilidad')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
@@ -144,18 +147,18 @@ const Terms = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-muted-foreground">
-                  <p className="mb-2">Para cualquier consulta sobre estos términos, contacta con nosotros:</p>
+                  <p className="mb-2">{t('ui.para-cualquier-consulta-sobre-estos-t-rminos-conta')}</p>
                   <ul className="space-y-1">
                     <li>Email: legal@rematerial.com</li>
-                    <li>Teléfono: +34 900 123 456</li>
-                    <li>Dirección: Calle Principal 123, 28001 Madrid, España</li>
+                    <li>{t('ui.tel-fono-34-900-123-456')}</li>
+                    <li>{t('ui.direcci-n-calle-principal-123-28001-madrid-espa-a')}</li>
                   </ul>
                 </div>
               </CardContent>
             </Card>
 
             <div className="text-sm text-muted-foreground text-center mt-8">
-              <p>Última actualización: 1 de enero de 2024</p>
+              <p>{t('ui.ltima-actualizaci-n-1-de-enero-de-2024')}</p>
             </div>
           </div>
         </div>

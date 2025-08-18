@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type Mode = "producto" | "sector";
 
@@ -16,12 +17,12 @@ type ExploreFiltersBarProps = {
 };
 
 const SECTOR_OPTIONS = [
-  { value: "construccion", label: "Construcción" },
+  { value: "construccion", label: t('ui.construcci-n') },
   { value: "textil", label: "Textil" },
-  { value: "madera", label: "Madera" },
+  { value: "madera", label: t('ui.madera') },
   { value: "metalurgia", label: "Metalurgia" },
-  { value: "piedra", label: "Piedra y Mármol" },
-  { value: "otros", label: "Otros" },
+  { value: "piedra", label: t('ui.piedra-y-m-rmol') },
+  { value: "otros", label: t('ui.otros') },
 ];
 
 // Nota: estas categorías de producto son un punto de partida seguro.
@@ -29,16 +30,16 @@ const SECTOR_OPTIONS = [
 // ProductGrid solo recibe "selectedCategory" como antes.
 const PRODUCT_CATEGORY_OPTIONS = [
   { value: "metal", label: "Metal" },
-  { value: "madera", label: "Madera" },
-  { value: "plastico", label: "Plástico" },
-  { value: "piedra", label: "Piedra" },
+  { value: "madera", label: t('ui.madera') },
+  { value: "plastico", label: t('ui.pl-stico') },
+  { value: "piedra", label: t('ui.piedra') },
   { value: "textil", label: "Textil" },
-  { value: "vidrio", label: "Vidrio" },
-  { value: "papel-carton", label: "Papel/Cartón" },
-  { value: "electronica", label: "Electrónica" },
-  { value: "maquinaria", label: "Maquinaria" },
-  { value: "palets", label: "Palets" },
-  { value: "otros", label: "Otros" },
+  { value: "vidrio", label: t('ui.vidrio') },
+  { value: "papel-carton", label: t('ui.papel-cart-n') },
+  { value: "electronica", label: t('ui.electr-nica') },
+  { value: "maquinaria", label: t('ui.maquinaria') },
+  { value: "palets", label: t('ui.palets') },
+  { value: "otros", label: t('ui.otros') },
 ];
 
 export default function ExploreFiltersBar({
@@ -49,6 +50,8 @@ export default function ExploreFiltersBar({
   onCategoryChange,
   onModeChange,
 }: ExploreFiltersBarProps) {
+  const { t } = useTranslation();
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -81,27 +84,19 @@ export default function ExploreFiltersBar({
 
   return (
     <div className="container mx-auto px-4 pt-4">
-      <div className="rounded-2xl border border-input bg-background p-4 shadow-sm">
-        {/* Modo de categorías */}
-        <div className="flex items-center gap-2 text-sm mb-3">
+      <div className="rounded-2xl border border-input bg-background p-4 shadow-sm">{t('ui.modo-de-categor-as')}<div className="flex items-center gap-2 text-sm mb-3">
           <span className="text-muted-foreground">Filtrar por:</span>
           <div className="inline-flex rounded-md border bg-muted/40 p-1">
             <Button
               size="sm"
               variant={mode === "producto" ? "default" : "ghost"}
               className="rounded-md"
-              onClick={() => onModeChange("producto")}
-            >
-              Producto
-            </Button>
+              onClick={() =>{t('ui.onmodechange-producto-producto')}</Button>
             <Button
               size="sm"
               variant={mode === "sector" ? "default" : "ghost"}
               className="rounded-md"
-              onClick={() => onModeChange("sector")}
-            >
-              Sector
-            </Button>
+              onClick={() =>{t('ui.onmodechange-sector-sector')}</Button>
           </div>
         </div>
 
@@ -111,33 +106,21 @@ export default function ExploreFiltersBar({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Buscar por nombre, material, ubicación..."
-              className="pl-10"
-            />
-            {searchQuery && (
-              <button
+              onChange={(e) =>{t('ui.onsearchchange-e-target-value-placeholder-buscar-por-nombre-material-ubicaci-n-classname-pl-10-searchquery')}<button
                 type="button"
-                aria-label="Limpiar búsqueda"
+                aria-label={t('ui.limpiar-b-squeda')}
                 onClick={() => onSearchChange("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </button>
             )}
-          </div>
-
-          {/* Chips de categorías (scroll horizontal en mobile) */}
-          <div className="overflow-x-auto">
+          </div>{t('ui.chips-de-categor-as-scroll-horizontal-en-mobile')}<div className="overflow-x-auto">
             <div className="flex gap-2">
               <Button
                 size="sm"
                 variant={selectedCategory === "" ? "default" : "outline"}
-                onClick={() => onCategoryChange("")}
-                className="whitespace-nowrap"
-              >
-                Todo
-              </Button>
+                onClick={() =>{t('ui.oncategorychange-classname-whitespace-nowrap-todo')}</Button>
               {options.map((opt) => (
                 <Button
                   key={opt.value}
@@ -154,10 +137,7 @@ export default function ExploreFiltersBar({
         </div>
 
         {/* Hint pequeño */}
-        <p className="mt-2 text-xs text-muted-foreground">
-          Selecciona “Producto” para filtrar por tipo de material; “Sector” usa los sectores que las
-          empresas declaran en su perfil.
-        </p>
+        <p className="mt-2 text-xs text-muted-foreground">{t('ui.selecciona-producto-para-filtrar-por-tipo-de-material-sector-usa-los-sectores-que-las-empresas-declaran-en-su-perfil')}</p>
       </div>
     </div>
   );

@@ -11,8 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { User, Settings, Package, MessageSquare, LogOut, BarChart3, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export const UserMenu = () => {
+  const { t } = useTranslation();
+
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -49,7 +52,7 @@ export const UserMenu = () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => handleNavigation('/profile')}>
           <User className="mr-2 h-4 w-4" />
-          <span>Mi Perfil</span>
+          <span>{t('ui.mi-perfil')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleNavigation('/dashboard')}>
           <BarChart3 className="mr-2 h-4 w-4" />
@@ -57,24 +60,24 @@ export const UserMenu = () => {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleNavigation('/my-products')}>
           <Package className="mr-2 h-4 w-4" />
-          <span>Mis Productos</span>
+          <span>{t('ui.mis-productos')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleNavigation('/favorites')}>
           <Heart className="mr-2 h-4 w-4" />
-          <span>Favoritos</span>
+          <span>{t('ui.favoritos')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleNavigation('/messages')}>
           <MessageSquare className="mr-2 h-4 w-4" />
-          <span>Mensajes</span>
+          <span>{t('ui.mensajes')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleNavigation('/settings')}>
           <Settings className="mr-2 h-4 w-4" />
-          <span>Configuración</span>
+          <span>{t('ui.configuraci-n')}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Cerrar Sesión</span>
+          <span>{t('ui.cerrar-sesi-n')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

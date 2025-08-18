@@ -15,8 +15,11 @@ import { useToast } from "@/hooks/use-toast";
 import ConversationActions from "@/features/chat/ConversationActions";
 import { markAsRead, getUnreadTotals, getUnreadForUser } from "@/features/chat/chatApi";
 import OfferCard from "@/components/OfferCard";
+import { useTranslation } from "react-i18next";
 
 const Messages = () => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -205,7 +208,9 @@ const Messages = () => {
         },
         async (payload) => {
           const newMsg = payload.new;
-          setMessages(prev => [...prev, newMsg]);
+
+          // ⛔ evita duplicar si ya está en el estado
+          setMessages(prev => (prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg]));
 
           // Bump conversación
           setConversations(prev => {
@@ -335,6 +340,7 @@ const Messages = () => {
     restoreOnTabRef.current = false;
   }, [activeTab]);
 
+  // 🛠 FIX: harden fetchConversations para que un error en unread no rompa toda la lista
   const fetchConversations = async () => {
     try {
       const { data, error } = await supabase
@@ -344,8 +350,13 @@ const Messages = () => {
         .order("updated_at", { ascending: false });
       if (error) throw error;
 
+      // 🛠 FIX: por si acaso, filtramos localmente también a las que pertenecen al usuario
+      const onlyMine = (data || []).filter(
+        (c: any) => c.buyer_id === user?.id || c.seller_id === user?.id
+      );
+
       const withData = await Promise.all(
-        (data || []).map(async (c: any) => {
+        (onlyMine).map(async (c: any) => {
           const { data: buyer } = await supabase.from("profiles").select("*").eq("id", c.buyer_id).single();
           const { data: seller } = await supabase.from("profiles").select("*").eq("id", c.seller_id).single();
           let product = null;
@@ -353,7 +364,16 @@ const Messages = () => {
             const { data: prod } = await supabase.from("products").select("*").eq("id", c.product_id).single();
             product = prod;
           }
-          return { ...c, buyer, seller, product };
+
+          // 🛠 FIX: unreadForMe protegido → si el helper lanza, usamos 0
+          let unreadForMe = 0;
+          try {
+            unreadForMe = await getUnreadForUser(c.id, user!.id);
+          } catch {
+            unreadForMe = 0;
+          }
+
+          return { ...c, buyer, seller, product, unreadForMe };
         })
       );
 
@@ -366,6 +386,7 @@ const Messages = () => {
       }
     } catch (err) {
       console.error("Error fetching conversations:", err);
+      // mantenemos el toast de error existente si lo tenías, o puedes dejarlo en consola
     } finally {
       setLoading(false);
     }
@@ -637,7 +658,7 @@ const Messages = () => {
           <Card>
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold mb-4">Acceso Requerido</h2>
-              <p className="text-muted-foreground">Debes iniciar sesión para ver tus mensajes.</p>
+              <p className="text-muted-foreground">{t('ui.debes-iniciar-sesi-n-para-ver-tus-mensajes')}</p>
             </CardContent>
           </Card>
         </div>
@@ -651,7 +672,7 @@ const Messages = () => {
       <Header />
       <div className="container mx-auto px-4 py-8" style={{ overflowAnchor: "none" as any }}>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Mensajes</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t('ui.mensajes')}</h1>
           <p className="text-muted-foreground">Gestiona tus conversaciones con compradores y vendedores</p>
         </div>
 
@@ -732,10 +753,8 @@ const Messages = () => {
                                 ) : null;
                               })()}
 
-                              {(() => {
-                                const unread = getUnreadForUser(c, user.id);
-                                return unread > 0 ? <Badge className="ml-2">{unread}</Badge> : null;
-                              })()}
+                              {/* usamos el valor precalculado */}
+                              {c.unreadForMe > 0 && <Badge className="ml-2">{c.unreadForMe}</Badge>}
 
                               <ConversationActions
                                 conversation={c}
@@ -843,8 +862,8 @@ const Messages = () => {
                 <CardContent className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Selecciona una conversación</h3>
-                    <p className="text-muted-foreground">Elige una conversación de la lista para empezar a chatear</p>
+                    <h3 className="text-lg font-semibold mb-2">{t('ui.selecciona-una-conversaci-n')}</h3>
+                    <p className="text-muted-foreground">{t('ui.elige-una-conversaci-n-de-la-lista-para-empezar-a-')}</p>
                   </div>
                 </CardContent>
               )}

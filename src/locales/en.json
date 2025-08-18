@@ -1,0 +1,12 @@
+{
+  "language": "Language",
+  "spanish": "Spanish",
+  "catalan": "Catalan",
+  "english": "English",
+  "choose_language_title": "Choose your language",
+  "choose_language_now": "Not now",
+  "confirm": "Confirm",
+  "interface_language": "Interface language",
+  "interface_language_desc": "Select the language for system texts.",
+  "search_placeholder": "What material are you looking for? e.g., marble, steel, textile..."
+}

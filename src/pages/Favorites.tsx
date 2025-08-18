@@ -9,8 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Package, Trash2, ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const Favorites = () => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -119,18 +122,16 @@ const Favorites = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Mis Favoritos</h1>
-          <p className="text-muted-foreground">Productos que has guardado para más tarde</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t('ui.mis-favoritos')}</h1>
+          <p className="text-muted-foreground">{t('ui.productos-que-has-guardado-para-m-s-tarde')}</p>
         </div>
 
         {favorites.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No tienes favoritos</h3>
-              <p className="text-muted-foreground mb-6">
-                Explora productos y guarda los que más te interesen
-              </p>
+              <h3 className="text-xl font-semibold mb-2">{t('ui.no-tienes-favoritos')}</h3>
+              <p className="text-muted-foreground mb-6">{t('ui.explora-productos-y-guarda-los-que-m-s-te-interese')}</p>
               <Button onClick={() => navigate('/')} type="button">
                 Explorar Productos
               </Button>

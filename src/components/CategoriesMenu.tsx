@@ -12,6 +12,7 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { TAXONOMY, type Taxon } from "@/data/taxonomy";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   variant?: "desktop" | "mobile";
@@ -23,6 +24,8 @@ function buildPath(cat: string, sub?: string) {
 }
 
 export default function CategoriesMenu({ variant = "desktop", onNavigate }: Props) {
+  const { t } = useTranslation();
+
   if (variant === "mobile") return <MobileCategories onNavigate={onNavigate} />;
   return <DesktopCategories onNavigate={onNavigate} />;
 }
@@ -34,9 +37,7 @@ function DesktopCategories({ onNavigate }: { onNavigate: (p: string) => void }) 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="hidden md:inline-flex">
-          Categorías
-        </Button>
+        <Button variant="ghost" className="hidden md:inline-flex">{t('ui.categor-as')}</Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="z-[70] w-72">
         {cats.map((c) => {
@@ -82,7 +83,7 @@ function MobileCategories({ onNavigate }: { onNavigate: (p: string) => void }) {
 
   return (
     <div className="p-2">
-      <div className="px-2 pb-2 text-sm font-medium text-muted-foreground">Categorías</div>
+      <div className="px-2 pb-2 text-sm font-medium text-muted-foreground">{t('ui.categor-as')}</div>
       <ul className="flex flex-col gap-1">
         {TAXONOMY.map((c) => {
           const opened = openCat === c.slug;

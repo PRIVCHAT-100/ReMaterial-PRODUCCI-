@@ -15,19 +15,29 @@ import { Upload, X, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SectorSubcategoryField, { SectorSubcategoryValue } from "@/components/forms/SectorSubcategoryField";
 import SectorCascadeMenu, { SectorCascadeValue } from "@/components/forms/SectorCascadeMenu";
+import { useTranslation } from "react-i18next";
 
 const SellProduct = () => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const [sectorSel, setSectorSel] = useState<SectorCascadeValue>({ sector: "", subcategory: "" });
+
   const [sectorField, setSectorField] = useState<SectorSubcategoryValue>({
     sector: "",
     subcategory: "",
   });
+
+  // Compat: mantener variables antiguas sectorSel/subSel sin tocar JSX restante
+  const sectorSel = sectorField.sector;
+  const subSel = sectorField.subcategory;
+  const setSectorSel = (s: string) => setSectorField(prev => ({ ...prev, sector: s }));
+  const setSubSel   = (s: string) => setSectorField(prev => ({ ...prev, subcategory: s }));
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -39,23 +49,24 @@ const SellProduct = () => {
     condition: "new",
     allow_direct_purchase: true,
     specifications: {} as Record<string, string>,
+    shipping_available: false,
   });
 
   const categories = [
-    { value: "construccion", label: "Construcción" },
+    { value: "construccion", label: t('ui.construcci-n') },
     { value: "textil", label: "Textil" },
-    { value: "madera", label: "Madera" },
+    { value: "madera", label: t('ui.madera') },
     { value: "metalurgia", label: "Metalurgia" },
-    { value: "piedra", label: "Piedra y Mármol" },
-    { value: "plastico", label: "Plástico" },
-    { value: "vidrio", label: "Vidrio" },
-    { value: "otros", label: "Otros" },
+    { value: "piedra", label: t('ui.piedra-y-m-rmol') },
+    { value: "plastico", label: t('ui.pl-stico') },
+    { value: "vidrio", label: t('ui.vidrio') },
+    { value: "otros", label: t('ui.otros') },
   ];
 
   const units = [
     { value: "kg", label: "Kilogramos" },
     { value: "m2", label: "Metros cuadrados" },
-    { value: "m3", label: "Metros cúbicos" },
+    { value: "m3", label: t('ui.metros-c-bicos') },
     { value: "unidades", label: "Unidades" },
     { value: "metros", label: "Metros lineales" },
     { value: "litros", label: "Litros" },
@@ -83,32 +94,27 @@ const SellProduct = () => {
   };
 
   const uploadImages = async (productId: string) => {
-    const uploadedUrls = [];
-    
+    const uploadedUrls = [] as string[];
     for (const image of images) {
       const fileName = `${productId}/${Date.now()}-${image.name}`;
       const { data, error } = await supabase.storage
         .from('product-images')
         .upload(fileName, image);
-      
       if (error) {
         console.error('Error uploading image:', error);
         continue;
       }
-      
       const { data: urlData } = supabase.storage
         .from('product-images')
         .getPublicUrl(fileName);
-      
       uploadedUrls.push(urlData.publicUrl);
     }
-    
     return uploadedUrls;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast({
         title: "Error",
@@ -137,6 +143,8 @@ const SellProduct = () => {
           specifications: formData.specifications,
           seller_id: user.id,
           status: 'active',
+          // 🆕 FIX: guardar disponibilidad de envío
+          shipping_available: formData.shipping_available,
         })
         .select()
         .single();
@@ -144,22 +152,16 @@ const SellProduct = () => {
       if (productError) throw productError;
 
       // Upload images if any
-      let imageUrls = [];
+      let imageUrls: string[] = [];
       if (images.length > 0) {
         imageUrls = await uploadImages(product.id);
-        
-        // Update product with image URLs
         await supabase
           .from('products')
           .update({ images: imageUrls })
           .eq('id', product.id);
       }
 
-      toast({
-        title: "¡Producto publicado!",
-        description: "Tu producto ha sido publicado exitosamente",
-      });
-
+      toast({ title: "¡Producto publicado!", description: "Tu producto ha sido publicado exitosamente" });
       navigate(`/product/${product.id}`);
     } catch (error: any) {
       console.error('Error creating product:', error);
@@ -181,7 +183,7 @@ const SellProduct = () => {
           <Card>
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold mb-4">Acceso Requerido</h2>
-              <p className="text-muted-foreground mb-4">Debes iniciar sesión para publicar productos.</p>
+              <p className="text-muted-foreground mb-4">{t('ui.debes-iniciar-sesi-n-para-publicar-productos')}</p>
               <Button onClick={() => navigate('/')} type="button">
                 Volver al inicio
               </Button>
@@ -201,7 +203,7 @@ const SellProduct = () => {
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Publicar Producto</h1>
-            <p className="text-muted-foreground">Añade tus materiales excedentes al marketplace</p>
+            <p className="text-muted-foreground">{t('ui.a-ade-tus-materiales-excedentes-al-marketplace')}</p>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -209,23 +211,23 @@ const SellProduct = () => {
               {/* Basic Information */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Información Básica</CardTitle>
+                  <CardTitle>{t('ui.informaci-n-b-sica')}</CardTitle>
                   <CardDescription>Describe tu producto de manera clara y atractiva</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="title">Título del Producto*</Label>
+                    <Label htmlFor="title">{t('ui.t-tulo-del-producto')}</Label>
                     <Input
                       id="title"
                       value={formData.title}
                       onChange={(e) => handleInputChange('title', e.target.value)}
-                      placeholder="ej. Recortes de mármol Carrara blanco"
+                      placeholder={t('ui.ej-recortes-de-m-rmol-carrara-blanco')}
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Descripción*</Label>
+                    <Label htmlFor="description">{t('ui.descripci-n')}</Label>
                     <textarea
                       id="description"
                       value={formData.description}
@@ -239,9 +241,10 @@ const SellProduct = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <SectorCascadeMenu
-                        value={sectorSel}
-                        onChange={(v) => {
-                          setSectorSel(v);
+                        value={{ sector: sectorSel, subcategory: subSel }}
+                        onChange={(v: SectorCascadeValue) => {
+                          setSectorSel(v.sector);
+                          setSubSel(v.subcategory);
                           // Compatibilidad total: guardamos la subcategoría en tu campo 'category'
                           handleInputChange("category", v.subcategory);
                         }}
@@ -250,7 +253,7 @@ const SellProduct = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="condition">Condición</Label>
+                      <Label htmlFor="condition">{t('ui.condici-n')}</Label>
                       <Select value={formData.condition} onValueChange={(value) => handleInputChange('condition', value)}>
                         <SelectTrigger>
                           <SelectValue />
@@ -270,12 +273,12 @@ const SellProduct = () => {
               {/* Pricing and Quantity */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Precio y Cantidad</CardTitle>
+                  <CardTitle>{t('ui.precio-y-cantidad')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="price">Precio (€)*</Label>
+                      <Label htmlFor="price">{t('ui.precio')}</Label>
                       <Input
                         id="price"
                         type="number"
@@ -318,12 +321,12 @@ const SellProduct = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="location">Ubicación*</Label>
+                    <Label htmlFor="location">{t('ui.ubicaci-n')}</Label>
                     <Input
                       id="location"
                       value={formData.location}
                       onChange={(e) => handleInputChange('location', e.target.value)}
-                      placeholder="Madrid, España"
+                      placeholder={t('ui.madrid-espa-a')}
                       required
                     />
                   </div>
@@ -333,8 +336,8 @@ const SellProduct = () => {
               {/* Images */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Imágenes</CardTitle>
-                  <CardDescription>Añade hasta 8 imágenes de tu producto</CardDescription>
+                  <CardTitle>{t('ui.im-genes')}</CardTitle>
+                  <CardDescription>{t('ui.a-ade-hasta-8-im-genes-de-tu-producto')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -349,49 +352,47 @@ const SellProduct = () => {
                       />
                       <label htmlFor="image-upload" className="cursor-pointer">
                         <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">
-                          Haz clic para subir imágenes o arrastra y suelta
-                        </p>
+                        <p className="text-sm text-muted-foreground">{t('ui.haz-clic-para-subir-im-genes-o-arrastra-y-suelta')}</p>
                       </label>
                     </div>
 
                     {images.length > 0 && (
-  <div>
-    {/* Carrusel: una imagen a la vez */}
-    <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
-      <img
-        src={URL.createObjectURL(images[(images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0)])}
-        alt={`Imagen ${(images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0)} + 1`}
-        className="absolute inset-0 h-full w-full object-cover"
-        draggable={false}
-      />
-      {images.length > 1 && (
-        <>
-          <button
-            type="button"
-            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/70 backdrop-blur px-2 py-2 border"
-            onClick={() => setCarouselIndex((prev) => (prev - 1 + images.length) % images.length)}
-            aria-label="Anterior"
-          >&lt;</button>
-          <button
-            type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/70 backdrop-blur px-2 py-2 border"
-            onClick={() => setCarouselIndex((prev) => (prev + 1) % images.length)}
-            aria-label="Siguiente"
-          >&gt;</button>
-          <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-2">
-            {images.map((_, i) => (
-              <span
-                key={i}
-                className={"h-1.5 w-1.5 rounded-full bg-white/50 " + (i === (images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0) ? "bg-white" : "")}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  </div>
-)}
+                      <div>
+                        {/* Carrusel: una imagen a la vez */}
+                        <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
+                          <img
+                            src={URL.createObjectURL(images[(images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0)])}
+                            alt={`Imagen ${(images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0)} + 1`}
+                            className="absolute inset-0 h-full w-full object-cover"
+                            draggable={false}
+                          />
+                          {images.length > 1 && (
+                            <>
+                              <button
+                                type="button"
+                                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/70 backdrop-blur px-2 py-2 border"
+                                onClick={() => setCarouselIndex((prev) => (prev - 1 + images.length) % images.length)}
+                                aria-label="Anterior"
+                              >&lt;</button>
+                              <button
+                                type="button"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/70 backdrop-blur px-2 py-2 border"
+                                onClick={() => setCarouselIndex((prev) => (prev + 1) % images.length)}
+                                aria-label="Siguiente"
+                              >&gt;</button>
+                              <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-2">
+                                {images.map((_, i) => (
+                                  <span
+                                    key={i}
+                                    className={"h-1.5 w-1.5 rounded-full bg-white/50 " + (i === (images.length ? Math.min(Math.max(carouselIndex, 0), images.length - 1) : 0) ? "bg-white" : "")}
+                                  />
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -399,19 +400,28 @@ const SellProduct = () => {
               {/* Settings */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Configuración de Venta</CardTitle>
+                  <CardTitle>{t('ui.configuraci-n-de-venta')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Permitir compra directa</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Los compradores podrán comprar sin negociar
-                      </p>
+                      <p className="text-sm text-muted-foreground">{t('ui.los-compradores-podr-n-comprar-sin-negociar')}</p>
                     </div>
                     <Switch
                       checked={formData.allow_direct_purchase}
                       onCheckedChange={(checked) => handleInputChange('allow_direct_purchase', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="space-y-0.5">
+                      <Label>{t('ui.disponible-para-env-os')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('ui.indica-si-puedes-enviar-este-producto')}</p>
+                    </div>
+                    <Switch
+                      checked={formData.shipping_available}
+                      onCheckedChange={(checked) => handleInputChange('shipping_available', checked)}
                     />
                   </div>
                 </CardContent>

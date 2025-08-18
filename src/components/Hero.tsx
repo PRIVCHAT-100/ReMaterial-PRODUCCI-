@@ -5,8 +5,11 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import heroImage from "@/assets/hero-marketplace.jpg";
+import { useTranslation } from "react-i18next";
 
 const Hero = () => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,7 +36,7 @@ const Hero = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             <h1 className="text-4xl lg:text-6xl font-bold text-foreground leading-tight">
-              El marketplace para<span className="text-primary block">materiales excedentes</span>
+              El marketplace para<span className="text-primary block">{t('ui.materiales-excedentes')}</span>
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
               Conectamos empresas y profesionales para dar segunda vida a materiales sobrantes.
@@ -46,23 +49,21 @@ const Hero = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
                   <Input
                     type="text"
-                    placeholder="¿Qué material buscas? Ej: mármol, acero, textil..."
+                    placeholder={t('ui.qu-material-buscas-ej-m-rmol-acero-textil')}
                     className="pl-10 h-12"
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
-                <Button size="lg" className="h-12 px-8" onClick={handleSearch}>
-                  Buscar materiales<ArrowRight className="ml-2 h-4 w-4" />
+                <Button size="lg" className="h-12 px-8" onClick={handleSearch}>{t('ui.buscar-materiales')}<ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
 
               {!user && (
                 <div className="mt-4 text-center">
                   <Button size="sm" variant="outline" onClick={() => navigate('/auth')}>
-                    <UserPlus className="mr-2 h-4 w-4" />Regístrate para más opciones
-                  </Button>
+                    <UserPlus className="mr-2 h-4 w-4" />{t('ui.reg-strate-para-m-s-opciones')}</Button>
                 </div>
               )}
             </div>
@@ -70,15 +71,15 @@ const Hero = () => {
             <div className="grid grid-cols-3 gap-8 pt-8">
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary">500+</div>
-                <div className="text-sm text-muted-foreground">Empresas activas</div>
+                <div className="text-sm text-muted-foreground">{t('ui.empresas-activas')}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary">2.5k+</div>
-                <div className="text-sm text-muted-foreground">Materiales disponibles</div>
+                <div className="text-sm text-muted-foreground">{t('ui.materiales-disponibles')}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-accent">95%</div>
-                <div className="text-sm text-muted-foreground">Satisfacción cliente</div>
+                <div className="text-sm text-muted-foreground">{t('ui.satisfacci-n-cliente')}</div>
               </div>
             </div>
           </div>
@@ -86,7 +87,7 @@ const Hero = () => {
           <div className="relative">
             <img
               src={heroImage}
-              alt="Materiales industriales y excedentes"
+              alt={t('ui.materiales-industriales-y-excedentes')}
               className="rounded-lg shadow-2xl w-full h-auto"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-lg" />

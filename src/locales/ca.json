@@ -1,0 +1,12 @@
+{
+  "language": "Idioma",
+  "spanish": "Espanyol",
+  "catalan": "Català",
+  "english": "Anglès",
+  "choose_language_title": "Tria el teu idioma",
+  "choose_language_now": "Ara no",
+  "confirm": "Confirmar",
+  "interface_language": "Idioma de la interfície",
+  "interface_language_desc": "Selecciona l'idioma dels textos predefinits.",
+  "search_placeholder": "Quin material busques? Ex: marbre, acer, tèxtil..."
+}

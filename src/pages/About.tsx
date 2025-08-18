@@ -14,15 +14,18 @@ import {
   Building
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const About = () => {
+  const { t } = useTranslation();
+
   const navigate = useNavigate();
 
   const stats = [
-    { icon: Users, label: "Empresas Registradas", value: "500+" },
+    { icon: Users, label: t('ui.empresas-registradas'), value: "500+" },
     { icon: Recycle, label: "Toneladas Recicladas", value: "1,200" },
     { icon: TrendingUp, label: "Transacciones Completadas", value: "2,500+" },
-    { icon: Globe, label: "Ciudades Cubiertas", value: "50+" },
+    { icon: Globe, label: t('ui.ciudades-cubiertas'), value: "50+" },
   ];
 
   const features = [
@@ -79,7 +82,7 @@ const About = () => {
       <section className="bg-gradient-to-br from-primary/10 via-background to-accent/10 py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <Badge variant="secondary" className="mb-4">Sobre Nosotros</Badge>
+            <Badge variant="secondary" className="mb-4">{t('ui.sobre-nosotros')}</Badge>
             <h1 className="text-5xl font-bold text-foreground mb-6">
               Transformando Residuos en <span className="text-primary">Oportunidades</span>
             </h1>
@@ -121,7 +124,7 @@ const About = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-foreground mb-4">Nuestra Misión</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-4">{t('ui.nuestra-misi-n')}</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 Creamos un marketplace donde los residuos de una empresa se convierten en la materia prima de otra, 
                 construyendo un futuro más sostenible.
@@ -199,31 +202,25 @@ const About = () => {
                   <CardTitle className="text-center">🌱 Sostenibilidad</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground text-center">
-                    Promovemos prácticas empresariales que respetan el medio ambiente y reducen el desperdicio.
-                  </p>
+                  <p className="text-muted-foreground text-center">{t('ui.promovemos-pr-cticas-empresariales-que-respetan-el')}</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-center">🤝 Colaboración</CardTitle>
+                  <CardTitle className="text-center">{t('ui.colaboraci-n')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground text-center">
-                    Creemos en el poder de las alianzas empresariales para crear valor compartido.
-                  </p>
+                  <p className="text-muted-foreground text-center">{t('ui.creemos-en-el-poder-de-las-alianzas-empresariales-')}</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-center">💡 Innovación</CardTitle>
+                  <CardTitle className="text-center">{t('ui.innovaci-n')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground text-center">
-                    Utilizamos tecnología avanzada para facilitar conexiones eficientes y transparentes.
-                  </p>
+                  <p className="text-muted-foreground text-center">{t('ui.utilizamos-tecnolog-a-avanzada-para-facilitar-cone')}</p>
                 </CardContent>
               </Card>
             </div>
@@ -235,12 +232,8 @@ const About = () => {
       <section className="py-16 bg-gradient-to-r from-primary to-accent">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              ¿Listo para formar parte del cambio?
-            </h2>
-            <p className="text-white/90 mb-8">
-              Únete a cientos de empresas que ya están transformando sus residuos en oportunidades
-            </p>
+            <h2 className="text-3xl font-bold text-white mb-4">{t('ui.listo-para-formar-parte-del-cambio')}</h2>
+            <p className="text-white/90 mb-8">{t('ui.nete-a-cientos-de-empresas-que-ya-est-n-transforma')}</p>
             <Button 
               size="lg" 
               variant="secondary"

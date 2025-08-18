@@ -22,8 +22,11 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProductCard from "@/components/ProductCard";
+import { useTranslation } from "react-i18next";
 
 const CompanyProfile = () => {
+  const { t } = useTranslation();
+
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
 
@@ -127,12 +130,10 @@ const CompanyProfile = () => {
         <div className="container mx-auto px-4 py-8">
           <Card>
             <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-bold mb-4">Empresa no encontrada</h2>
-              <p className="text-muted-foreground mb-4">
-                La empresa que buscas no existe o no está disponible.
-              </p>
+              <h2 className="text-2xl font-bold mb-4">{t('ui.empresa-no-encontrada')}</h2>
+              <p className="text-muted-foreground mb-4">{t('ui.la-empresa-que-buscas-no-existe-o-no-est-disponibl')}</p>
               <Button asChild>
-                <Link to="/companies">Ver todas las empresas</Link>
+                <Link to="/companies">{t('ui.ver-todas-las-empresas')}</Link>
               </Button>
             </CardContent>
           </Card>
@@ -158,9 +159,7 @@ const CompanyProfile = () => {
             <li>
               <div className="flex items-center">
                 <span className="mx-2 text-muted-foreground">/</span>
-                <Link to="/companies" className="text-muted-foreground hover:text-foreground">
-                  Empresas
-                </Link>
+                <Link to="/companies" className="text-muted-foreground hover:text-foreground">{t('ui.empresas')}</Link>
               </div>
             </li>
             <li aria-current="page">
@@ -254,7 +253,7 @@ const CompanyProfile = () => {
                 <div className="grid grid-cols-1 gap-4 text-center">
                   <div>
                     <div className="text-2xl font-bold text-primary">{stats.totalProducts}</div>
-                    <div className="text-sm text-muted-foreground">Productos activos</div>
+                    <div className="text-sm text-muted-foreground">{t('ui.productos-activos')}</div>
                   </div>
                 </div>
 
@@ -290,9 +289,7 @@ const CompanyProfile = () => {
                     className="w-full"
                     onClick={() => window.location.href = `/messages?seller=${company.id}`}
                   >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Contactar empresa
-                  </Button>
+                    <MessageSquare className="h-4 w-4 mr-2" />{t('ui.contactar-empresa')}</Button>
                 </div>
               </CardContent>
             </Card>
@@ -304,7 +301,7 @@ const CompanyProfile = () => {
             {company.description && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Sobre la empresa</CardTitle>
+                  <CardTitle>{t('ui.sobre-la-empresa')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground leading-relaxed">
@@ -348,6 +345,7 @@ const CompanyProfile = () => {
                         location={product.location || 'No especificada'}
                         image={product.images?.[0] || '/placeholder.svg'}
                         category={product.category}
+                        shippingAvailable={!!product.shipping_available}
                         seller={{
                           id: product.seller?.id || '',
                           name:
@@ -364,10 +362,8 @@ const CompanyProfile = () => {
                 ) : (
                   <div className="text-center py-8">
                     <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No hay productos disponibles</h3>
-                    <p className="text-muted-foreground">
-                      Esta empresa aún no ha publicado productos.
-                    </p>
+                    <h3 className="text-lg font-medium mb-2">{t('ui.no-hay-productos-disponibles')}</h3>
+                    <p className="text-muted-foreground">{t('ui.esta-empresa-a-n-no-ha-publicado-productos')}</p>
                   </div>
                 )}
               </CardContent>

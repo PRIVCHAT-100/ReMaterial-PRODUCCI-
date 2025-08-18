@@ -6,8 +6,11 @@ import { Loader2, Database, CheckCircle, AlertCircle } from "lucide-react";
 import { repairUserCompanyLinks } from "@/utils/repairData";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useTranslation } from "react-i18next";
 
 const RepairData = () => {
+  const { t } = useTranslation();
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
@@ -40,22 +43,18 @@ const RepairData = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
-                Reparación de Datos
-              </CardTitle>
-              <CardDescription>
-                Esta herramienta repara las conexiones entre usuarios, empresas y productos en la base de datos.
-              </CardDescription>
+                <Database className="h-5 w-5" />{t('ui.reparaci-n-de-datos')}</CardTitle>
+              <CardDescription>{t('ui.esta-herramienta-repara-las-conexiones-entre-usuar')}</CardDescription>
             </CardHeader>
             
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <h3 className="font-semibold">¿Qué hace esta reparación?</h3>
+                <h3 className="font-semibold">{t('ui.qu-hace-esta-reparaci-n')}</h3>
                 <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                  <li>Crea registros de empresa faltantes para usuarios marcados como vendedores</li>
-                  <li>Corrige productos con seller_id inválido o nulo</li>
-                  <li>Vincula correctamente usuarios con sus empresas y productos</li>
-                  <li>Restaura la integridad de datos después de migraciones</li>
+                  <li>{t('ui.crea-registros-de-empresa-faltantes-para-usuarios-')}</li>
+                  <li>{t('ui.corrige-productos-con-seller-id-inv-lido-o-nulo')}</li>
+                  <li>{t('ui.vincula-correctamente-usuarios-con-sus-empresas-y-')}</li>
+                  <li>{t('ui.restaura-la-integridad-de-datos-despu-s-de-migraci')}</li>
                 </ul>
               </div>
 

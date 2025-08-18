@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export interface CounterOfferDialogProps {
   open: boolean;
@@ -21,6 +22,8 @@ export interface CounterOfferDialogProps {
 }
 
 export default function CounterOfferDialog({ open, onOpenChange, product }: CounterOfferDialogProps) {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -122,7 +125,7 @@ export default function CounterOfferDialog({ open, onOpenChange, product }: Coun
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>Hacer contraoferta</DialogTitle>
+          <DialogTitle>{t('ui.hacer-contraoferta')}</DialogTitle>
           <DialogDescription>
             Producto: <b>{product.title}</b>
           </DialogDescription>
@@ -130,7 +133,7 @@ export default function CounterOfferDialog({ open, onOpenChange, product }: Coun
 
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
-            <label className="text-sm">Precio ofrecido (€)</label>
+            <label className="text-sm">{t('ui.precio-ofrecido')}</label>
             <Input inputMode="decimal" placeholder="0.00" value={price} onChange={(e) => setPrice(e.target.value)} />
           </div>
           <div className="grid gap-2">
@@ -138,14 +141,14 @@ export default function CounterOfferDialog({ open, onOpenChange, product }: Coun
             <Input inputMode="decimal" placeholder="Ej: 100" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
           </div>
           <div className="grid gap-2">
-            <label className="text-sm">Mensaje para el vendedor (opcional)</label>
+            <label className="text-sm">{t('ui.mensaje-para-el-vendedor-opcional')}</label>
             <Textarea placeholder="Detalles, condiciones, recogida, etc." value={message} onChange={(e) => setMessage(e.target.value)} />
           </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancelar</Button>
-          <Button onClick={handleSubmit} disabled={submitting}>Enviar contraoferta</Button>
+          <Button onClick={handleSubmit} disabled={submitting}>{t('ui.enviar-contraoferta')}</Button>
         </div>
       </DialogContent>
     </Dialog>

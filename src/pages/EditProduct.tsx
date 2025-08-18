@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { UploadCloud, Trash2, Save, ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type Product = {
   id: string;
@@ -32,6 +33,8 @@ type Product = {
 const BUCKET = "product-images";
 
 export default function EditProduct() {
+  const { t } = useTranslation();
+
   const { id } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -247,10 +250,8 @@ export default function EditProduct() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
-            </Button>
-            <h1 className="text-2xl font-bold">Editar producto</h1>
+              <ArrowLeft className="h-4 w-4 mr-2" />{t('ui.volver')}</Button>
+            <h1 className="text-2xl font-bold">{t('ui.editar-producto')}</h1>
           </div>
           <Badge variant="secondary">ID: {product.id.slice(0, 8)}</Badge>
         </div>
@@ -259,10 +260,10 @@ export default function EditProduct() {
           {/* Imágenes */}
           <Card className="lg:col-span-1">
             <CardContent className="p-6">
-              <h2 className="font-semibold mb-3">Imágenes</h2>
+              <h2 className="font-semibold mb-3">{t('ui.im-genes')}</h2>
 
               {(currentImages?.length ?? 0) === 0 && (
-                <p className="text-sm text-muted-foreground mb-3">Este producto no tiene imágenes.</p>
+                <p className="text-sm text-muted-foreground mb-3">{t('ui.este-producto-no-tiene-im-genes')}</p>
               )}
 
               <div className="grid grid-cols-2 gap-3 mb-4">
@@ -291,7 +292,7 @@ export default function EditProduct() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="new-images">Añadir nuevas imágenes</Label>
+                <Label htmlFor="new-images">{t('ui.a-adir-nuevas-im-genes')}</Label>
                 <div className="flex items-center gap-2">
                   <Input id="new-images" type="file" accept="image/*" multiple onChange={onSelectFiles} />
                   <UploadCloud className="h-5 w-5 text-muted-foreground" />
@@ -308,18 +309,18 @@ export default function EditProduct() {
             <CardContent className="p-6 space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Título</Label>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título del producto" />
+                  <Label>{t('ui.t-tulo')}</Label>
+                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('ui.t-tulo-del-producto')} />
                 </div>
                 <div>
-                  <Label>Ubicación</Label>
-                  <Input value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder="Ciudad / Provincia" />
+                  <Label>{t('ui.ubicaci-n')}</Label>
+                  <Input value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder={t('ui.ciudad-provincia')} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Precio (€)</Label>
+                  <Label>{t('ui.precio')}</Label>
                   <Input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" />
                 </div>
                 <div>
@@ -334,17 +335,17 @@ export default function EditProduct() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Categoría</Label>
-                  <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="p. ej., 'madera', 'acero'…" />
+                  <Label>{t('ui.categor-a')}</Label>
+                  <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={t('ui.p-ej-madera-acero')} />
                 </div>
                 <div>
-                  <Label>Subcategoría</Label>
-                  <Input value={subcategory} onChange={(e) => setSubcategory(e.target.value)} placeholder="p. ej., 'palets', 'inox'…" />
+                  <Label>{t('ui.subcategor-a')}</Label>
+                  <Input value={subcategory} onChange={(e) => setSubcategory(e.target.value)} placeholder={t('ui.p-ej-palets-inox')} />
                 </div>
               </div>
 
               <div>
-                <Label>Descripción</Label>
+                <Label>{t('ui.descripci-n')}</Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}

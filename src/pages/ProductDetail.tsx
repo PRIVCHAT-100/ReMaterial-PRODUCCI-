@@ -12,6 +12,7 @@ import {
   MapPin, 
   Calendar, 
   Package, 
+  Truck,
   MessageSquare, 
   Heart, 
   Share2, 
@@ -24,8 +25,11 @@ import {
 import { PaymentDialog } from "@/components/payment/PaymentDialog";
 import { useToast } from "@/hooks/use-toast";
 import CounterOfferDialog from "@/components/CounterOfferDialog";
+import { useTranslation } from "react-i18next";
 
 const ProductDetail = () => {
+  const { t } = useTranslation();
+
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -238,9 +242,7 @@ const ProductDetail = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-2 mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} type="button">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
-          </Button>
+            <ArrowLeft className="h-4 w-4 mr-2" />{t('ui.volver')}</Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -357,6 +359,10 @@ const ProductDetail = () => {
                   <Package className="h-4 w-4" />
                   Cantidad: {product.quantity} {product.unit}
                 </div>
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4" />
+                  {product.shipping_available ? "Envío disponible" : "Sin envío"}
+                </div>
               </div>
             </div>
 
@@ -369,9 +375,7 @@ const ProductDetail = () => {
                   className="w-full"
                   type="button"
                   onClick={reserveDirect}
-                >
-                  Marcar como RESERVADO (precio acordado)
-                </Button>
+                >{t('ui.marcar-como-reservado-precio-acordado')}</Button>
               )}
 
               {/* 🆕 Quitar reserva (solo vendedor y si está reservado) */}
@@ -394,15 +398,11 @@ const ProductDetail = () => {
                   type="button"
                   onClick={() => navigate(`/product/${product.id}/edit`, { state: { product } })}
                 >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Editar producto
-                </Button>
+                  <Pencil className="h-4 w-4 mr-2" />{t('ui.editar-producto')}</Button>
               )}
 
               <Button onClick={handleContact} className="w-full" type="button">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Contactar Vendedor
-              </Button>
+                <MessageSquare className="h-4 w-4 mr-2" />{t('ui.contactar-vendedor')}</Button>
 
               <Button 
                 variant="outline"
@@ -425,9 +425,7 @@ const ProductDetail = () => {
                   className="w-full"
                   onClick={() => setPaymentDialogOpen(true)}
                 >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Comprar Directamente
-                </Button>
+                  <ShoppingCart className="h-4 w-4 mr-2" />{t('ui.comprar-directamente')}</Button>
               )}
             </div>
 
@@ -485,7 +483,7 @@ const ProductDetail = () => {
         <div className="mt-8">
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Descripción del Producto</h2>
+              <h2 className="text-xl font-semibold mb-4">{t('ui.descripci-n-del-producto')}</h2>
               <div className="prose max-w-none">
                 <p className="text-muted-foreground whitespace-pre-wrap">{product.description}</p>
               </div>

@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Star, Package, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 type Company = {
   id: string;
@@ -24,37 +25,41 @@ type Company = {
 };
 
 // Banners para la página de Empresas (puedes cambiar URLs/enlaces cuando quieras)
-const COMPANY_BANNERS = [
-  {
-    id: "s1",
-    image:
-      "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=1600&auto=format&fit=crop",
-    href: "/messages", // por ejemplo, “contacta con vendedores”
-    label: "Patrocinado: Envases retornables",
-    alt: "Palets y cajas retornables",
-    objectPosition: "center",
-  },
-  {
-    id: "s2",
-    image:
-      "https://images.unsplash.com/photo-1518618021020-8ee98c65f7a0?q=80&w=1600&auto=format&fit=crop",
-    href: "/explore?tag=metal",
-    label: "Acuerdos con metalúrgicas",
-    alt: "Bobinas metálicas",
-    objectPosition: "center top",
-  },
-  {
-    id: "s3",
-    image:
-      "https://images.unsplash.com/photo-1552871212-5d5c9086a0d2?q=80&w=1600&auto=format&fit=crop",
-    href: "/explore?tag=madera",
-    label: "Madera recuperada",
-    alt: "Tablas de madera",
-    objectPosition: "50% 40%",
-  },
-];
+
 
 const Companies = () => {
+  const { t } = useTranslation();
+
+  const COMPANY_BANNERS = [
+    {
+      id: "s1",
+      image:
+        "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=1600&auto=format&fit=crop",
+      href: "/messages", // por ejemplo, “contacta con vendedores”
+      label: "Patrocinado: Envases retornables",
+      alt: "Palets y cajas retornables",
+      objectPosition: "center",
+    },
+    {
+      id: "s2",
+      image:
+        "https://images.unsplash.com/photo-1518618021020-8ee98c65f7a0?q=80&w=1600&auto=format&fit=crop",
+      href: "/explore?tag=metal",
+      label: t('ui.acuerdos-con-metal-rgicas'),
+      alt: "Bobinas metálicas",
+      objectPosition: "center top",
+    },
+    {
+      id: "s3",
+      image:
+        "https://images.unsplash.com/photo-1552871212-5d5c9086a0d2?q=80&w=1600&auto=format&fit=crop",
+      href: "/explore?tag=madera",
+      label: t('ui.madera-recuperada'),
+      alt: "Tablas de madera",
+      objectPosition: "50% 40%",
+    },
+  ];
+
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
@@ -63,13 +68,13 @@ const Companies = () => {
   const [loading, setLoading] = useState(true);
 
   const sectors = [
-    { value: "all", label: "Todos los sectores" },
-    { value: "construccion", label: "Construcción" },
+    { value: "all", label: t('ui.todos-los-sectores') },
+    { value: "construccion", label: t('ui.construcci-n') },
     { value: "textil", label: "Textil" },
-    { value: "madera", label: "Madera" },
+    { value: "madera", label: t('ui.madera') },
     { value: "metalurgia", label: "Metalurgia" },
-    { value: "piedra", label: "Piedra y Mármol" },
-    { value: "otros", label: "Otros" },
+    { value: "piedra", label: t('ui.piedra-y-m-rmol') },
+    { value: "otros", label: t('ui.otros') },
   ];
 
   useEffect(() => {
@@ -152,12 +157,8 @@ const Companies = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Título */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Empresas Registradas
-          </h1>
-          <p className="text-muted-foreground">
-            Descubre empresas que ofrecen materiales excedentes
-          </p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t('ui.empresas-registradas')}</h1>
+          <p className="text-muted-foreground">{t('ui.descubre-empresas-que-ofrecen-materiales-excedente')}</p>
         </div>
 
         {/* Filtros */}
@@ -166,7 +167,7 @@ const Companies = () => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Buscar empresas por nombre o ubicación..."
+                placeholder={t('ui.buscar-empresas-por-nombre-o-ubicaci-n')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -270,9 +271,7 @@ const Companies = () => {
                       className="flex-1"
                       onClick={() => navigate(`/messages?seller=${company.id}`)}
                     >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Contactar
-                    </Button>
+                      <MessageSquare className="h-4 w-4 mr-2" />{t('ui.contactar')}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -283,10 +282,8 @@ const Companies = () => {
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">No se encontraron empresas</h3>
-            <p className="text-muted-foreground">
-              Prueba a cambiar los filtros o buscar por otro término.
-            </p>
+            <h3 className="text-lg font-semibold mb-2">{t('ui.no-se-encontraron-empresas')}</h3>
+            <p className="text-muted-foreground">{t('ui.prueba-a-cambiar-los-filtros-o-buscar-por-otro-t-r')}</p>
           </div>
         )}
       </div>

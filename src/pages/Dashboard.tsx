@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, Package, MessageSquare, Euro, TrendingUp, Eye, Heart, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const Dashboard = () => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
@@ -70,7 +73,7 @@ const Dashboard = () => {
           <Card>
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold mb-4">Acceso Requerido</h2>
-              <p className="text-muted-foreground">Debes iniciar sesión para ver tu dashboard.</p>
+              <p className="text-muted-foreground">{t('ui.debes-iniciar-sesi-n-para-ver-tu-dashboard')}</p>
             </CardContent>
           </Card>
         </div>
@@ -86,14 +89,14 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard de Ventas</h1>
-          <p className="text-muted-foreground">Gestiona tus productos y monitorea tu rendimiento</p>
+          <p className="text-muted-foreground">{t('ui.gestiona-tus-productos-y-monitorea-tu-rendimiento')}</p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Productos</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('ui.total-productos')}</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -119,20 +122,18 @@ const Dashboard = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Favoritos</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('ui.favoritos')}</CardTitle>
               <Heart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.favorites}</div>
-              <p className="text-xs text-muted-foreground">
-                Productos guardados
-              </p>
+              <p className="text-xs text-muted-foreground">{t('ui.productos-guardados')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Mensajes</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('ui.mensajes')}</CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -148,9 +149,7 @@ const Dashboard = () => {
           {/* Recent Products */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Productos Recientes
-                <Button variant="outline" size="sm" onClick={() => navigate('/my-products')} type="button">
+              <CardTitle className="flex items-center justify-between">{t('ui.productos-recientes')}<Button variant="outline" size="sm" onClick={() => navigate('/my-products')} type="button">
                   Ver todos
                 </Button>
               </CardTitle>
@@ -179,7 +178,7 @@ const Dashboard = () => {
               ) : (
                 <div className="text-center py-8">
                   <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">No tienes productos aún</p>
+                  <p className="text-muted-foreground mb-4">{t('ui.no-tienes-productos-a-n')}</p>
                   <Button onClick={() => navigate('/sell')} type="button">
                     Crear primer producto
                   </Button>
@@ -191,7 +190,7 @@ const Dashboard = () => {
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Acciones Rápidas</CardTitle>
+              <CardTitle>{t('ui.acciones-r-pidas')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-4">
@@ -202,7 +201,7 @@ const Dashboard = () => {
                     </div>
                     <div className="text-left">
                       <div className="font-medium">Publicar Producto</div>
-                      <div className="text-sm text-muted-foreground">Añade un nuevo material a tu catálogo</div>
+                      <div className="text-sm text-muted-foreground">{t('ui.a-ade-un-nuevo-material-a-tu-cat-logo')}</div>
                     </div>
                   </div>
                 </Button>
@@ -213,7 +212,7 @@ const Dashboard = () => {
                       <MessageSquare className="h-5 w-5 text-blue-600" />
                     </div>
                     <div className="text-left">
-                      <div className="font-medium">Ver Mensajes</div>
+                      <div className="font-medium">{t('ui.ver-mensajes')}</div>
                       <div className="text-sm text-muted-foreground">Responde a consultas de compradores</div>
                     </div>
                   </div>
@@ -225,8 +224,8 @@ const Dashboard = () => {
                       <Users className="h-5 w-5 text-green-600" />
                     </div>
                     <div className="text-left">
-                      <div className="font-medium">Editar Perfil</div>
-                      <div className="text-sm text-muted-foreground">Actualiza la información de tu empresa</div>
+                      <div className="font-medium">{t('ui.editar-perfil')}</div>
+                      <div className="text-sm text-muted-foreground">{t('ui.actualiza-la-informaci-n-de-tu-empresa')}</div>
                     </div>
                   </div>
                 </Button>
@@ -237,8 +236,8 @@ const Dashboard = () => {
                       <BarChart3 className="h-5 w-5 text-purple-600" />
                     </div>
                     <div className="text-left">
-                      <div className="font-medium">Ver Estadísticas</div>
-                      <div className="text-sm text-muted-foreground">Analiza el rendimiento de tus productos</div>
+                      <div className="font-medium">{t('ui.ver-estad-sticas')}</div>
+                      <div className="text-sm text-muted-foreground">{t('ui.analiza-el-rendimiento-de-tus-productos')}</div>
                     </div>
                   </div>
                 </Button>
