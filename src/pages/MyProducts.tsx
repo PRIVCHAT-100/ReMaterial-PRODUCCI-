@@ -16,7 +16,6 @@ import {
   Plus,
   AlertCircle 
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,8 +27,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+
 
 const MyProducts = () => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -125,7 +129,7 @@ const MyProducts = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Mis Productos</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t('ui.mis-productos')}</h1>
             <p className="text-muted-foreground">Gestiona tu inventario y ventas</p>
           </div>
           <Button onClick={() => navigate('/sell')} type="button">
@@ -138,10 +142,8 @@ const MyProducts = () => {
           <Card>
             <CardContent className="p-12 text-center">
               <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No tienes productos</h3>
-              <p className="text-muted-foreground mb-6">
-                Comienza a vender publicando tu primer producto
-              </p>
+              <h3 className="text-xl font-semibold mb-2">{t('ui.no-tienes-productos')}</h3>
+              <p className="text-muted-foreground mb-6">{t('ui.comienza-a-vender-publicando-tu-primer-producto')}</p>
               <Button onClick={() => navigate('/sell')} type="button">
                 <Plus className="h-4 w-4 mr-2" />
                 Publicar Primer Producto
@@ -213,7 +215,7 @@ const MyProducts = () => {
                       variant="outline" 
                       size="sm"
                       onClick={() => navigate(`/product/${product.id}/edit`, { state: { product } })}
-                      title="Editar"
+                      title={t('ui.editar')}
                     >
                       <Edit3 className="h-4 w-4" />
                     </Button>
@@ -225,13 +227,11 @@ const MyProducts = () => {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta acción no se puede deshacer. El producto será eliminado permanentemente.
-                          </AlertDialogDescription>
+                          <AlertDialogTitle>{t('ui.eliminar-producto')}</AlertDialogTitle>
+                          <AlertDialogDescription>{t('ui.esta-acci-n-no-se-puede-deshacer-el-producto-ser-e')}</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogCancel>{t('ui.cancelar')}</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDelete(product.id)}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

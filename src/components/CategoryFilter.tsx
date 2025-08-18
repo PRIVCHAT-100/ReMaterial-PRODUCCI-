@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 const categories = [
   { id: 'all', name: 'Todos los sectores', count: 2500 },
@@ -23,13 +24,15 @@ interface CategoryFilterProps {
 }
 
 const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryFilterProps) => {
+  const { t } = useTranslation();
+
   return (
     <section className="bg-muted/30 py-8 border-b border-border">
       <div className="container mx-auto px-4">
         <div className="space-y-6">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-semibold text-foreground">Explora por sector</h2>
-            <p className="text-muted-foreground">Encuentra materiales específicos para tu industria</p>
+            <h2 className="text-2xl font-semibold text-foreground">{t('ui.explora-por-sector')}</h2>
+            <p className="text-muted-foreground">{t('ui.encuentra-materiales-espec-ficos-para-tu-industria')}</p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-3">

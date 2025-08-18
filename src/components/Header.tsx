@@ -71,7 +71,7 @@ const Header = () => {
               }}
               className="hidden md:flex items-center flex-1 max-w-xl mx-4"
               role="search"
-              aria-label="Buscar materiales"
+              aria-label={t('ui.buscar-materiales')}
             >
               <div className="flex-1 relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -86,8 +86,7 @@ const Header = () => {
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 />
               </div>
-              <Button size="lg" className="h-12 px-8 ml-3" type="submit">
-                Buscar materiales <ArrowRight className="ml-2 h-4 w-4" />
+              <Button size="lg" className="h-12 px-8 ml-3" type="submit">{t('ui.buscar-materiales')}<ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
           )}
@@ -99,9 +98,7 @@ const Header = () => {
             </Button>
             {user && (
               <Button variant="ghost" className="text-foreground hover:text-primary" onClick={() => navigate("/sell")} type="button">
-                <Plus className="h-4 w-4 mr-2" />
-                Vender
-              </Button>
+                <Plus className="h-4 w-4 mr-2" />{t('ui.vender')}</Button>
             )}
             <Button variant="ghost" className="text-foreground hover:text-primary" onClick={() => navigate("/companies")} type="button">
               Empresas
@@ -137,7 +134,7 @@ const Header = () => {
                   variant="ghost"
                   size="sm"
                   className="md:hidden"
-                  aria-label="Abrir menú"
+                  aria-label={t('ui.abrir-men')}
                   aria-controls="mobile-menu"
                  type="button">
                   <Menu className="h-4 w-4" />
@@ -148,7 +145,7 @@ const Header = () => {
                 side="right"
                 className="w-80 max-w-[85vw] p-0 overflow-y-auto"
                 id="mobile-menu"
-                aria-label="Menú de navegación"
+                aria-label={t('ui.men-de-navegaci-n')}
               >
                 <nav className="py-3">
                   <ul className="flex flex-col gap-2 p-2">
@@ -188,9 +185,7 @@ const Header = () => {
                             }
                           >
                             <span className="inline-flex items-center">
-                              <Plus className="h-4 w-4 mr-2" />
-                              + Vender
-                            </span>
+                              <Plus className="h-4 w-4 mr-2" />{t('ui.vender')}</span>
                           </NavLink>
                         </SheetClose>
                       </li>
@@ -229,7 +224,7 @@ const Header = () => {
             }}
             className="md:hidden pb-3"
             role="search"
-            aria-label="Buscar materiales"
+            aria-label={t('ui.buscar-materiales')}
           >
             <div className="flex flex-col gap-3">
               <div className="relative">
@@ -246,8 +241,7 @@ const Header = () => {
                 />
               </div>
 
-              <Button size="lg" className="h-12" type="submit">
-                Buscar materiales <ArrowRight className="ml-2 h-4 w-4" />
+              <Button size="lg" className="h-12" type="submit">{t('ui.buscar-materiales')}<ArrowRight className="ml-2 h-4 w-4" />
               </Button>
 
               {!user && (

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface LoginDialogProps {
   open: boolean;
@@ -19,6 +20,8 @@ interface LoginDialogProps {
 }
 
 export const LoginDialog = ({ open, onOpenChange, onSwitchToRegister }: LoginDialogProps) => {
+  const { t } = useTranslation();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,10 +47,8 @@ export const LoginDialog = ({ open, onOpenChange, onSwitchToRegister }: LoginDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Iniciar Sesión</DialogTitle>
-          <DialogDescription>
-            Accede a tu cuenta para gestionar tus productos y ventas
-          </DialogDescription>
+          <DialogTitle>{t('ui.iniciar-sesi-n')}</DialogTitle>
+          <DialogDescription>{t('ui.accede-a-tu-cuenta-para-gestionar-tus-productos-y-')}</DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -58,13 +59,13 @@ export const LoginDialog = ({ open, onOpenChange, onSwitchToRegister }: LoginDia
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@empresa.com"
+              placeholder={t('ui.tu-empresa-com')}
               required
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="password">Contraseña</Label>
+            <Label htmlFor="password">{t('ui.contrase-a')}</Label>
             <Input
               id="password"
               type="password"
@@ -81,7 +82,7 @@ export const LoginDialog = ({ open, onOpenChange, onSwitchToRegister }: LoginDia
           </Button>
           
           <div className="text-center text-sm">
-            <span className="text-muted-foreground">¿No tienes cuenta? </span>
+            <span className="text-muted-foreground">{t('ui.no-tienes-cuenta')}</span>
             <Button 
               variant="link" 
               className="p-0 h-auto"

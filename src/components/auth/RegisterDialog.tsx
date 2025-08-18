@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface RegisterDialogProps {
   open: boolean;
@@ -20,6 +21,8 @@ interface RegisterDialogProps {
 }
 
 export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: RegisterDialogProps) => {
+  const { t } = useTranslation();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -82,10 +85,8 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Registro de Empresa</DialogTitle>
-          <DialogDescription>
-            Crea tu cuenta para empezar a vender materiales excedentes
-          </DialogDescription>
+          <DialogTitle>{t('ui.registro-de-empresa')}</DialogTitle>
+          <DialogDescription>{t('ui.crea-tu-cuenta-para-empezar-a-vender-materiales-ex')}</DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -97,18 +98,18 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="contacto@empresa.com"
+                placeholder={t('ui.contacto-empresa-com')}
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="companyName">Nombre de la Empresa*</Label>
+              <Label htmlFor="companyName">{t('ui.nombre-de-la-empresa')}</Label>
               <Input
                 id="companyName"
                 value={formData.companyName}
                 onChange={(e) => handleInputChange('companyName', e.target.value)}
-                placeholder="Mi Empresa S.L."
+                placeholder={t('ui.mi-empresa-s-l')}
                 required
               />
             </div>
@@ -116,7 +117,7 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña*</Label>
+              <Label htmlFor="password">{t('ui.contrase-a')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -128,7 +129,7 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Contraseña*</Label>
+              <Label htmlFor="confirmPassword">{t('ui.confirmar-contrase-a')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -147,13 +148,13 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
                 id="contactName"
                 value={formData.contactName}
                 onChange={(e) => handleInputChange('contactName', e.target.value)}
-                placeholder="Juan Pérez"
+                placeholder={t('ui.juan-p-rez')}
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono</Label>
+              <Label htmlFor="phone">{t('ui.tel-fono')}</Label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -165,29 +166,29 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="sector">Sector*</Label>
+              <Label htmlFor="sector">{t('ui.sector')}</Label>
               <Select value={formData.sector} onValueChange={(value) => handleInputChange('sector', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona tu sector" />
+                  <SelectValue placeholder={t('ui.selecciona-tu-sector')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="construccion">Construcción</SelectItem>
+                  <SelectItem value="construccion">{t('ui.construcci-n')}</SelectItem>
                   <SelectItem value="textil">Textil</SelectItem>
-                  <SelectItem value="madera">Madera</SelectItem>
+                  <SelectItem value="madera">{t('ui.madera')}</SelectItem>
                   <SelectItem value="metalurgia">Metalurgia</SelectItem>
-                  <SelectItem value="piedra">Piedra y Mármol</SelectItem>
-                  <SelectItem value="otros">Otros</SelectItem>
+                  <SelectItem value="piedra">{t('ui.piedra-y-m-rmol')}</SelectItem>
+                  <SelectItem value="otros">{t('ui.otros')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="location">Ubicación*</Label>
+              <Label htmlFor="location">{t('ui.ubicaci-n')}</Label>
               <Input
                 id="location"
                 value={formData.location}
                 onChange={(e) => handleInputChange('location', e.target.value)}
-                placeholder="Madrid, España"
+                placeholder={t('ui.madrid-espa-a')}
                 required
               />
             </div>
@@ -199,7 +200,7 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
               id="website"
               value={formData.website}
               onChange={(e) => handleInputChange('website', e.target.value)}
-              placeholder="https://www.miempresa.com"
+              placeholder={t('ui.https-www-miempresa-com')}
             />
           </div>
           
@@ -209,7 +210,7 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
           </Button>
           
           <div className="text-center text-sm">
-            <span className="text-muted-foreground">¿Ya tienes cuenta? </span>
+            <span className="text-muted-foreground">{t('ui.ya-tienes-cuenta')}</span>
             <Button 
               variant="link" 
               className="p-0 h-auto"

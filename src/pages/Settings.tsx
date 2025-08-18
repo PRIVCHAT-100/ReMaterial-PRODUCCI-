@@ -192,7 +192,7 @@ export default function Settings()
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center gap-2">
-          <h1 className="text-3xl font-bold">Configuración</h1>
+          <h1 className="text-3xl font-bold">{t('ui.configuraci-n')}</h1>
           {profile?.company_name && (
             <Badge variant="secondary" className="ml-2">{profile.company_name}</Badge>
           )}
@@ -216,8 +216,7 @@ export default function Settings()
               <User className="h-4 w-4" /> Cuenta
             </TabsTrigger>
             <TabsTrigger value="company" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" /> Empresa
-            </TabsTrigger>
+              <Building2 className="h-4 w-4" />{t('ui.empresa')}</TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" /> Notificaciones
             </TabsTrigger>
@@ -235,20 +234,20 @@ export default function Settings()
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Nombre</Label>
+                    <Label>{t('ui.nombre')}</Label>
                     <Input
                       value={form.first_name || ""}
                       onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-                      placeholder="Tu nombre"
+                      placeholder={t('ui.tu-nombre')}
                       disabled={disabled}
                     />
                   </div>
                   <div>
-                    <Label>Apellidos</Label>
+                    <Label>{t('ui.apellidos')}</Label>
                     <Input
                       value={form.last_name || ""}
                       onChange={(e) => setForm({ ...form, last_name: e.target.value })}
-                      placeholder="Tus apellidos"
+                      placeholder={t('ui.tus-apellidos')}
                       disabled={disabled}
                     />
                   </div>
@@ -258,15 +257,13 @@ export default function Settings()
                       Email
                     </Label>
                     <Input value={form.email || ""} disabled />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      El email se gestiona desde tu cuenta. Si necesitas cambiarlo, contáctanos.
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{t('ui.el-email-se-gestiona-desde-tu-cuenta-si-necesitas-')}</p>
                   </div>
                 </div>
 
                 <Separator />
                 <div className="flex justify-end gap-2">
-                  <Button onClick={saveProfile} disabled={disabled} type="button">Guardar cambios</Button>
+                  <Button onClick={saveProfile} disabled={disabled} type="button">{t('ui.guardar-cambios')}</Button>
                 </div>
               </CardContent>
             </Card>
@@ -276,23 +273,22 @@ export default function Settings()
           {activeTab === "company" && (
             <Card>
               <CardHeader>
-                <CardTitle>Información de la empresa</CardTitle>
+                <CardTitle>{t('ui.informaci-n-de-la-empresa')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <Label>Nombre de empresa</Label>
+                    <Label>{t('ui.nombre-de-empresa')}</Label>
                     <Input
                       value={form.company_name || ""}
                       onChange={(e) => setForm({ ...form, company_name: e.target.value })}
-                      placeholder="Mi Empresa S.L."
+                      placeholder={t('ui.mi-empresa-s-l')}
                       disabled={disabled}
                     />
                   </div>
                   <div>
                     <Label className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" /> Teléfono
-                    </Label>
+                      <Phone className="h-4 w-4 text-muted-foreground" />{t('ui.tel-fono')}</Label>
                     <Input
                       value={form.phone || ""}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -302,12 +298,11 @@ export default function Settings()
                   </div>
                   <div>
                     <Label className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" /> Ubicación
-                    </Label>
+                      <MapPin className="h-4 w-4 text-muted-foreground" />{t('ui.ubicaci-n')}</Label>
                     <Input
                       value={form.location || ""}
                       onChange={(e) => setForm({ ...form, location: e.target.value })}
-                      placeholder="Barcelona, España"
+                      placeholder={t('ui.barcelona-espa-a')}
                       disabled={disabled}
                     />
                   </div>
@@ -318,16 +313,16 @@ export default function Settings()
                     <Input
                       value={form.website || ""}
                       onChange={(e) => setForm({ ...form, website: e.target.value })}
-                      placeholder="https://miempresa.com"
+                      placeholder={t('ui.https-miempresa-com')}
                       disabled={disabled}
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <Label>Descripción</Label>
+                    <Label>{t('ui.descripci-n')}</Label>
                     <Textarea
                       value={form.description || ""}
                       onChange={(e) => setForm({ ...form, description: e.target.value })}
-                      placeholder="Cuéntanos sobre tu empresa…"
+                      placeholder={t('ui.cu-ntanos-sobre-tu-empresa')}
                       className="min-h-[120px]"
                       disabled={disabled}
                     />
@@ -336,7 +331,7 @@ export default function Settings()
 
                 <Separator />
                 <div className="flex justify-end gap-2">
-                  <Button onClick={saveProfile} disabled={disabled} type="button">Guardar cambios</Button>
+                  <Button onClick={saveProfile} disabled={disabled} type="button">{t('ui.guardar-cambios')}</Button>
                 </div>
               </CardContent>
             </Card>
@@ -346,15 +341,13 @@ export default function Settings()
           {activeTab === "notifications" && (
             <Card>
               <CardHeader>
-                <CardTitle>Preferencias de notificación</CardTitle>
+                <CardTitle>{t('ui.preferencias-de-notificaci-n')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Mensajes</p>
-                    <p className="text-sm text-muted-foreground">
-                      Recibir alertas cuando te envíen un mensaje.
-                    </p>
+                    <p className="font-medium">{t('ui.mensajes')}</p>
+                    <p className="text-sm text-muted-foreground">{t('ui.recibir-alertas-cuando-te-env-en-un-mensaje')}</p>
                   </div>
                   <Switch checked={notifyMessages} onCheckedChange={setNotifyMessages} disabled={disabled} />
                 </div>
@@ -362,26 +355,22 @@ export default function Settings()
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">Actualizaciones de producto</p>
-                    <p className="text-sm text-muted-foreground">
-                      Avisos sobre tus productos y transacciones.
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t('ui.avisos-sobre-tus-productos-y-transacciones')}</p>
                   </div>
                   <Switch checked={notifyProductUpdates} onCheckedChange={setNotifyProductUpdates} disabled={disabled} />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Novedades y ofertas</p>
-                    <p className="text-sm text-muted-foreground">
-                      Correos con novedades, lanzamientos o promociones.
-                    </p>
+                    <p className="font-medium">{t('ui.novedades-y-ofertas')}</p>
+                    <p className="text-sm text-muted-foreground">{t('ui.correos-con-novedades-lanzamientos-o-promociones')}</p>
                   </div>
                   <Switch checked={notifyMarketing} onCheckedChange={setNotifyMarketing} disabled={disabled} />
                 </div>
 
                 <Separator />
                 <div className="flex justify-end gap-2">
-                  <Button onClick={saveNotifications} disabled={disabled} type="button">Guardar preferencias</Button>
+                  <Button onClick={saveNotifications} disabled={disabled} type="button">{t('ui.guardar-preferencias')}</Button>
                 </div>
               </CardContent>
             </Card>
@@ -395,7 +384,7 @@ export default function Settings()
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-3">
-                  <Label>Nueva contraseña</Label>
+                  <Label>{t('ui.nueva-contrase-a')}</Label>
                   <Input
                     type="password"
                     value={newPassword}
@@ -403,7 +392,7 @@ export default function Settings()
                     placeholder="••••••••"
                     disabled={changingPass}
                   />
-                  <Label>Repetir nueva contraseña</Label>
+                  <Label>{t('ui.repetir-nueva-contrase-a')}</Label>
                   <Input
                     type="password"
                     value={newPassword2}
@@ -412,16 +401,12 @@ export default function Settings()
                     disabled={changingPass}
                   />
                   <div className="flex justify-end">
-                    <Button onClick={changePassword} disabled={changingPass || !newPassword || !newPassword2} type="button">
-                      Cambiar contraseña
-                    </Button>
+                    <Button onClick={changePassword} disabled={changingPass || !newPassword || !newPassword2} type="button">{t('ui.cambiar-contrase-a')}</Button>
                   </div>
                 </div>
 
                 <Separator />
-                <div className="text-sm text-muted-foreground">
-                  Próximamente: Verificación en dos pasos (2FA).
-                </div>
+                <div className="text-sm text-muted-foreground">{t('ui.pr-ximamente-verificaci-n-en-dos-pasos-2fa')}</div>
               </CardContent>
             </Card>
           )}

@@ -15,8 +15,11 @@ import { useToast } from "@/hooks/use-toast";
 import ConversationActions from "@/features/chat/ConversationActions";
 import { markAsRead, getUnreadTotals, getUnreadForUser } from "@/features/chat/chatApi";
 import OfferCard from "@/components/OfferCard";
+import { useTranslation } from "react-i18next";
 
 const Messages = () => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -655,7 +658,7 @@ const Messages = () => {
           <Card>
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold mb-4">Acceso Requerido</h2>
-              <p className="text-muted-foreground">Debes iniciar sesión para ver tus mensajes.</p>
+              <p className="text-muted-foreground">{t('ui.debes-iniciar-sesi-n-para-ver-tus-mensajes')}</p>
             </CardContent>
           </Card>
         </div>
@@ -669,7 +672,7 @@ const Messages = () => {
       <Header />
       <div className="container mx-auto px-4 py-8" style={{ overflowAnchor: "none" as any }}>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Mensajes</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t('ui.mensajes')}</h1>
           <p className="text-muted-foreground">Gestiona tus conversaciones con compradores y vendedores</p>
         </div>
 
@@ -859,8 +862,8 @@ const Messages = () => {
                 <CardContent className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Selecciona una conversación</h3>
-                    <p className="text-muted-foreground">Elige una conversación de la lista para empezar a chatear</p>
+                    <h3 className="text-lg font-semibold mb-2">{t('ui.selecciona-una-conversaci-n')}</h3>
+                    <p className="text-muted-foreground">{t('ui.elige-una-conversaci-n-de-la-lista-para-empezar-a-')}</p>
                   </div>
                 </CardContent>
               )}

@@ -11,8 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Globe, Phone, Mail, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const Profile = () => {
+  const { t } = useTranslation();
+
   const { user, updateProfile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -116,7 +119,7 @@ const Profile = () => {
           <Card>
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold mb-4">Acceso Requerido</h2>
-              <p className="text-muted-foreground">Debes iniciar sesión para ver tu perfil.</p>
+              <p className="text-muted-foreground">{t('ui.debes-iniciar-sesi-n-para-ver-tu-perfil')}</p>
             </CardContent>
           </Card>
         </div>
@@ -173,7 +176,7 @@ const Profile = () => {
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold text-primary">{stats.totalProducts}</div>
-                      <div className="text-sm text-muted-foreground">Productos</div>
+                      <div className="text-sm text-muted-foreground">{t('ui.productos')}</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-primary">{stats.totalSales}</div>
@@ -198,26 +201,24 @@ const Profile = () => {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Información de la Empresa</CardTitle>
-                <CardDescription>
-                  Actualiza la información de tu empresa para que los compradores puedan conocerte mejor
-                </CardDescription>
+                <CardTitle>{t('ui.informaci-n-de-la-empresa')}</CardTitle>
+                <CardDescription>{t('ui.actualiza-la-informaci-n-de-tu-empresa-para-que-lo')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="company_name">Nombre de la Empresa</Label>
+                      <Label htmlFor="company_name">{t('ui.nombre-de-la-empresa')}</Label>
                       <Input
                         id="company_name"
                         value={profile.company_name}
                         onChange={(e) => handleInputChange('company_name', e.target.value)}
-                        placeholder="Mi Empresa S.L."
+                        placeholder={t('ui.mi-empresa-s-l')}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="first_name">Nombre</Label>
+                      <Label htmlFor="first_name">{t('ui.nombre')}</Label>
                       <Input
                         id="first_name"
                         value={profile.first_name}
@@ -234,14 +235,14 @@ const Profile = () => {
                         id="last_name"
                         value={profile.last_name}
                         onChange={(e) => handleInputChange('last_name', e.target.value)}
-                        placeholder="Pérez"
+                        placeholder={t('ui.p-rez')}
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Teléfono</Label>
+                      <Label htmlFor="phone">{t('ui.tel-fono')}</Label>
                       <Input
                         id="phone"
                         value={profile.phone}
@@ -251,30 +252,30 @@ const Profile = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="sector">Sector</Label>
+                      <Label htmlFor="sector">{t('ui.sector')}</Label>
                       <Select value={profile.sector} onValueChange={(value) => handleInputChange('sector', value)}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecciona tu sector" />
+                          <SelectValue placeholder={t('ui.selecciona-tu-sector')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="construccion">Construcción</SelectItem>
+                          <SelectItem value="construccion">{t('ui.construcci-n')}</SelectItem>
                           <SelectItem value="textil">Textil</SelectItem>
-                          <SelectItem value="madera">Madera</SelectItem>
+                          <SelectItem value="madera">{t('ui.madera')}</SelectItem>
                           <SelectItem value="metalurgia">Metalurgia</SelectItem>
-                          <SelectItem value="piedra">Piedra y Mármol</SelectItem>
-                          <SelectItem value="otros">Otros</SelectItem>
+                          <SelectItem value="piedra">{t('ui.piedra-y-m-rmol')}</SelectItem>
+                          <SelectItem value="otros">{t('ui.otros')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="location">Ubicación</Label>
+                    <Label htmlFor="location">{t('ui.ubicaci-n')}</Label>
                     <Input
                       id="location"
                       value={profile.location}
                       onChange={(e) => handleInputChange('location', e.target.value)}
-                      placeholder="Madrid, España"
+                      placeholder={t('ui.madrid-espa-a')}
                     />
                   </div>
 
@@ -290,12 +291,12 @@ const Profile = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="website">Página Web</Label>
+                      <Label htmlFor="website">{t('ui.p-gina-web')}</Label>
                       <Input
                         id="website"
                         value={profile.website}
                         onChange={(e) => handleInputChange('website', e.target.value)}
-                        placeholder="www.miempresa.com"
+                        placeholder={t('ui.www-miempresa-com')}
                       />
                     </div>
 
@@ -332,12 +333,12 @@ const Profile = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Descripción de la Empresa</Label>
+                    <Label htmlFor="description">{t('ui.descripci-n-de-la-empresa')}</Label>
                     <textarea
                       id="description"
                       value={profile.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
-                      placeholder="Describe tu empresa, servicios y especialidades..."
+                      placeholder={t('ui.describe-tu-empresa-servicios-y-especialidades')}
                       className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>

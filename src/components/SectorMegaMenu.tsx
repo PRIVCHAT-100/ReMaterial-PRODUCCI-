@@ -1,73 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /** Sectores → subcategorías (ajusta etiquetas/valores si lo necesitas) */
-const SECTORS: Record<
-  string,
-  { label: string; subs: { value: string; label: string }[] }
-> = {
-  construccion: {
-    label: "Construcción",
-    subs: [
-      { value: "aridos", label: "Áridos" },
-      { value: "ladrillo-ceramica", label: "Ladrillo/Cerámica" },
-      { value: "cemento-mortero", label: "Cemento/Mortero" },
-      { value: "aislamientos", label: "Aislamientos" },
-      { value: "vidrio-obra", label: "Vidrio" },
-      { value: "metales-obra", label: "Metales de obra" },
-    ],
-  },
-  textil: {
-    label: "Textil",
-    subs: [
-      { value: "algodon", label: "Algodón" },
-      { value: "poliester", label: "Poliéster" },
-      { value: "mezclas", label: "Mezclas" },
-      { value: "retales", label: "Retales" },
-      { value: "hilo-bobinas", label: "Hilo/Bobinas" },
-    ],
-  },
-  madera: {
-    label: "Madera",
-    subs: [
-      { value: "tablones", label: "Tablones" },
-      { value: "palets", label: "Palets" },
-      { value: "aglomerado", label: "Aglomerado" },
-      { value: "contrachapado", label: "Contrachapado" },
-      { value: "serrin", label: "Serrín" },
-    ],
-  },
-  metalurgia: {
-    label: "Metalurgia",
-    subs: [
-      { value: "acero", label: "Acero" },
-      { value: "aluminio", label: "Aluminio" },
-      { value: "cobre", label: "Cobre" },
-      { value: "laton", label: "Latón" },
-      { value: "inox", label: "Inoxidable" },
-    ],
-  },
-  piedra: {
-    label: "Piedra y Mármol",
-    subs: [
-      { value: "marmol", label: "Mármol" },
-      { value: "granito", label: "Granito" },
-      { value: "pizarra", label: "Pizarra" },
-      { value: "aridos-piedra", label: "Áridos" },
-    ],
-  },
-  otros: {
-    label: "Otros",
-    subs: [
-      { value: "plastico", label: "Plástico" },
-      { value: "vidrio", label: "Vidrio" },
-      { value: "papel-carton", label: "Papel/Cartón" },
-      { value: "electronica", label: "Electrónica" },
-      { value: "maquinaria", label: "Maquinaria" },
-    ],
-  },
-};
+
 
 type Props = {
   selectedSector: string;
@@ -88,6 +25,75 @@ export default function SectorMegaMenu({
   onSectorChange,
   onSubcategoryChange,
 }: Props) {
+  const { t } = useTranslation();
+
+  const SECTORS: Record<
+    string,
+    { label: string; subs: { value: string; label: string }[] }
+  > = {
+    construccion: {
+      label: t('ui.construcci-n'),
+      subs: [
+        { value: "aridos", label: t('ui.ridos') },
+        { value: "ladrillo-ceramica", label: t('ui.ladrillo-cer-mica') },
+        { value: "cemento-mortero", label: "Cemento/Mortero" },
+        { value: "aislamientos", label: "Aislamientos" },
+        { value: "vidrio-obra", label: t('ui.vidrio') },
+        { value: "metales-obra", label: "Metales de obra" },
+      ],
+    },
+    textil: {
+      label: "Textil",
+      subs: [
+        { value: "algodon", label: t('ui.algod-n') },
+        { value: "poliester", label: t('ui.poli-ster') },
+        { value: "mezclas", label: "Mezclas" },
+        { value: "retales", label: "Retales" },
+        { value: "hilo-bobinas", label: "Hilo/Bobinas" },
+      ],
+    },
+    madera: {
+      label: t('ui.madera'),
+      subs: [
+        { value: "tablones", label: "Tablones" },
+        { value: "palets", label: t('ui.palets') },
+        { value: "aglomerado", label: "Aglomerado" },
+        { value: "contrachapado", label: "Contrachapado" },
+        { value: "serrin", label: t('ui.serr-n') },
+      ],
+    },
+    metalurgia: {
+      label: "Metalurgia",
+      subs: [
+        { value: "acero", label: "Acero" },
+        { value: "aluminio", label: "Aluminio" },
+        { value: "cobre", label: "Cobre" },
+        { value: "laton", label: t('ui.lat-n') },
+        { value: "inox", label: "Inoxidable" },
+      ],
+    },
+    piedra: {
+      label: t('ui.piedra-y-m-rmol'),
+      subs: [
+        { value: "marmol", label: t('ui.m-rmol') },
+        { value: "granito", label: "Granito" },
+        { value: "pizarra", label: "Pizarra" },
+        { value: "aridos-piedra", label: t('ui.ridos') },
+      ],
+    },
+    otros: {
+      label: t('ui.otros'),
+      subs: [
+        { value: "plastico", label: t('ui.pl-stico') },
+        { value: "vidrio", label: t('ui.vidrio') },
+        { value: "papel-carton", label: t('ui.papel-cart-n') },
+        { value: "electronica", label: t('ui.electr-nica') },
+        { value: "maquinaria", label: t('ui.maquinaria') },
+      ],
+    },
+  };
+
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [panelLeft, setPanelLeft] = useState<number>(0);

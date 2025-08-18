@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { renameConversation, setArchived, softDelete, mute, unmute } from "./chatApi";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   conversation: any;
@@ -16,6 +17,8 @@ type Props = {
 };
 
 export default function ConversationActions({ conversation, userId, onChange }: Props) {
+  const { t } = useTranslation();
+
   const [open, setOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -183,15 +186,13 @@ export default function ConversationActions({ conversation, userId, onChange }: 
                   Quitar silencio
                 </Button>
 
-                <Button variant="destructive" className="w-full" onClick={doDelete}>
-                  Eliminar (solo para mí)
-                </Button>
+                <Button variant="destructive" className="w-full" onClick={doDelete}>{t('ui.eliminar-solo-para-m')}</Button>
               </>
             ) : (
               <div className="space-y-2">
                 <Input
                   autoFocus
-                  placeholder="Nuevo título…"
+                  placeholder={t('ui.nuevo-t-tulo')}
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   onKeyDown={(e) => {
@@ -203,9 +204,7 @@ export default function ConversationActions({ conversation, userId, onChange }: 
                   }}
                 />
                 <div className="flex gap-2">
-                  <Button className="flex-1" onClick={doRename} disabled={!newTitle.trim()}>
-                    Guardar
-                  </Button>
+                  <Button className="flex-1" onClick={doRename} disabled={!newTitle.trim()}>{t('ui.guardar')}</Button>
                   <Button
                     variant="outline"
                     className="flex-1"

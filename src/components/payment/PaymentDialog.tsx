@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CreditCard, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface PaymentDialogProps {
   open: boolean;
@@ -23,6 +24,8 @@ interface PaymentDialogProps {
 }
 
 export const PaymentDialog = ({ open, onOpenChange, product }: PaymentDialogProps) => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -97,9 +100,7 @@ export const PaymentDialog = ({ open, onOpenChange, product }: PaymentDialogProp
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Comprar Producto
-          </DialogTitle>
+            <CreditCard className="h-5 w-5" />{t('ui.comprar-producto')}</DialogTitle>
           <DialogDescription>
             Completa tu compra de {product.title}
           </DialogDescription>
@@ -147,23 +148,23 @@ export const PaymentDialog = ({ open, onOpenChange, product }: PaymentDialogProp
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Truck className="h-5 w-5" />
-              <h3 className="font-medium">Dirección de Envío</h3>
+              <h3 className="font-medium">{t('ui.direcci-n-de-env-o')}</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="name">Nombre Completo*</Label>
+                <Label htmlFor="name">{t('ui.nombre-completo')}</Label>
                 <Input
                   id="name"
                   value={shippingAddress.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Juan Pérez"
+                  placeholder={t('ui.juan-p-rez')}
                   required
                 />
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="address">Dirección*</Label>
+                <Label htmlFor="address">{t('ui.direcci-n')}</Label>
                 <Input
                   id="address"
                   value={shippingAddress.address}
@@ -174,7 +175,7 @@ export const PaymentDialog = ({ open, onOpenChange, product }: PaymentDialogProp
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="city">Ciudad*</Label>
+                <Label htmlFor="city">{t('ui.ciudad')}</Label>
                 <Input
                   id="city"
                   value={shippingAddress.city}
@@ -185,7 +186,7 @@ export const PaymentDialog = ({ open, onOpenChange, product }: PaymentDialogProp
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="postalCode">Código Postal</Label>
+                <Label htmlFor="postalCode">{t('ui.c-digo-postal')}</Label>
                 <Input
                   id="postalCode"
                   value={shippingAddress.postalCode}
@@ -195,12 +196,12 @@ export const PaymentDialog = ({ open, onOpenChange, product }: PaymentDialogProp
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="country">País</Label>
+                <Label htmlFor="country">{t('ui.pa-s')}</Label>
                 <Input
                   id="country"
                   value={shippingAddress.country}
                   onChange={(e) => handleInputChange('country', e.target.value)}
-                  placeholder="España"
+                  placeholder={t('ui.espa-a')}
                 />
               </div>
             </div>
@@ -215,7 +216,7 @@ export const PaymentDialog = ({ open, onOpenChange, product }: PaymentDialogProp
                 <span>€{totalPrice.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Comisión de plataforma (5%)</span>
+                <span>{t('ui.comisi-n-de-plataforma-5')}</span>
                 <span>€{platformFee.toFixed(2)}</span>
               </div>
               <div className="border-t pt-2 flex justify-between font-medium">

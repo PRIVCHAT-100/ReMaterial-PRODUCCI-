@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 export interface Offer {
   id: string;
@@ -20,6 +21,8 @@ export interface Offer {
 }
 
 export default function OfferCard({ offer }: { offer: Offer }) {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState<false | 'accepted' | 'rejected' | 'canceled' | 'reserve'>(false);
@@ -120,7 +123,7 @@ export default function OfferCard({ offer }: { offer: Offer }) {
         {statusBadge(offer.status)}
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
-        <div><b>Precio ofrecido:</b> {fmtEUR(offer.offered_price)}</div>
+        <div><b>{t('ui.precio-ofrecido')}</b> {fmtEUR(offer.offered_price)}</div>
         {offer.quantity != null && <div><b>Cantidad:</b> {offer.quantity}</div>}
         {offer.message && <div className="whitespace-pre-line"><b>Mensaje:</b> {offer.message}</div>}
         <div className="text-xs text-muted-foreground">{new Date(offer.created_at).toLocaleString()}</div>

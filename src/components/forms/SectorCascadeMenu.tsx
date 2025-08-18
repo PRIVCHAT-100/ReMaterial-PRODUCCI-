@@ -1,41 +1,39 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
-/** Sectores → subcategorías (ajusta los valores a tu modelo) */
-const SECTORS: Record<
-  string,
-  { label: string; subs: { value: string; label: string }[] }
-> = {
+/** Generador de sectores traducidos */
+const getSectors = (t: (key: string) => string) => ({
   construccion: {
-    label: "Construcción",
+    label: t('ui.construcci-n'),
     subs: [
-      { value: "aridos", label: "Áridos" },
-      { value: "ladrillo-ceramica", label: "Ladrillo/Cerámica" },
+      { value: "aridos", label: t('ui.ridos') },
+      { value: "ladrillo-ceramica", label: t('ui.ladrillo-cer-mica') },
       { value: "cemento-mortero", label: "Cemento/Mortero" },
       { value: "aislamientos", label: "Aislamientos" },
-      { value: "vidrio-obra", label: "Vidrio" },
+      { value: "vidrio-obra", label: t('ui.vidrio') },
       { value: "metales-obra", label: "Metales de obra" },
     ],
   },
   textil: {
     label: "Textil",
     subs: [
-      { value: "algodon", label: "Algodón" },
-      { value: "poliester", label: "Poliéster" },
+      { value: "algodon", label: t('ui.algod-n') },
+      { value: "poliester", label: t('ui.poli-ster') },
       { value: "mezclas", label: "Mezclas" },
       { value: "retales", label: "Retales" },
       { value: "hilo-bobinas", label: "Hilo/Bobinas" },
     ],
   },
   madera: {
-    label: "Madera",
+    label: t('ui.madera'),
     subs: [
       { value: "tablones", label: "Tablones" },
-      { value: "palets", label: "Palets" },
+      { value: "palets", label: t('ui.palets') },
       { value: "aglomerado", label: "Aglomerado" },
       { value: "contrachapado", label: "Contrachapado" },
-      { value: "serrin", label: "Serrín" },
+      { value: "serrin", label: t('ui.serr-n') },
     ],
   },
   metalurgia: {
@@ -44,40 +42,40 @@ const SECTORS: Record<
       { value: "acero", label: "Acero" },
       { value: "aluminio", label: "Aluminio" },
       { value: "cobre", label: "Cobre" },
-      { value: "laton", label: "Latón" },
+      { value: "laton", label: t('ui.lat-n') },
       { value: "inox", label: "Inoxidable" },
     ],
   },
   piedra: {
-    label: "Piedra y Mármol",
+    label: t('ui.piedra-y-m-rmol'),
     subs: [
-      { value: "marmol", label: "Mármol" },
+      { value: "marmol", label: t('ui.m-rmol') },
       { value: "granito", label: "Granito" },
       { value: "pizarra", label: "Pizarra" },
-      { value: "aridos-piedra", label: "Áridos" },
+      { value: "aridos-piedra", label: t('ui.ridos') },
     ],
   },
   otros: {
-    label: "Otros",
+    label: t('ui.otros'),
     subs: [
-      { value: "plastico", label: "Plástico" },
-      { value: "vidrio", label: "Vidrio" },
-      { value: "papel-carton", label: "Papel/Cartón" },
-      { value: "electronica", label: "Electrónica" },
-      { value: "maquinaria", label: "Maquinaria" },
+      { value: "plastico", label: t('ui.pl-stico') },
+      { value: "vidrio", label: t('ui.vidrio') },
+      { value: "papel-carton", label: t('ui.papel-cart-n') },
+      { value: "electronica", label: t('ui.electr-nica') },
+      { value: "maquinaria", label: t('ui.maquinaria') },
     ],
   },
-};
+});
 
 export type SectorCascadeValue = { sector: string; subcategory: string };
 
 type Props = {
-  value: SectorCascadeValue;                  // { sector, subcategory }
-  onChange: (v: SectorCascadeValue) => void;  // callback al seleccionar
+  value: SectorCascadeValue;
+  onChange: (v: SectorCascadeValue) => void;
   required?: boolean;
   error?: string | null;
-  label?: string;                             // "Sector / Subcategoría"
-  placeholder?: string;                       // "Selecciona…"
+  label?: string;
+  placeholder?: string;
   disabled?: boolean;
 };
 
@@ -86,18 +84,23 @@ export default function SectorCascadeMenu({
   onChange,
   required,
   error,
-  label = "Sector / Subcategoría",
-  placeholder = "Selecciona sector y subcategoría",
+  label,
+  placeholder,
   disabled,
 }: Props) {
+  const { t } = useTranslation();
+  const SECTORS = useMemo(() => getSectors(t), [t]);
+
+  const labelText = label ?? t('ui.sector-subcategor-a');
+  const placeholderText = placeholder ?? t('ui.selecciona-sector-y-subcategor-a');
+
   const { sector, subcategory } = value;
   const [open, setOpen] = useState(false);
-  const [hoverKey, setHoverKey] = useState<string | null>(sector || null);
+  const [hoverKey, setHoverKey] = useState<string | null>(null);
+
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const sectorsList = useMemo(() => Object.entries(SECTORS), [SECTORS]);
 
-  const sectorsList = useMemo(() => Object.entries(SECTORS), []);
-
-  // Cerrar al hacer click fuera o ESC
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       if (!rootRef.current) return;
@@ -114,23 +117,17 @@ export default function SectorCascadeMenu({
     };
   }, []);
 
-  const selectedLabel =
-    (sector && SECTORS[sector]?.label) || "" +
-    (subcategory ? ` / ${Object.values(SECTORS).flatMap(s => s.subs).find(s => s.value === subcategory)?.label ?? ""}` : "");
-
   const clear = () => onChange({ sector: "", subcategory: "" });
 
   return (
     <div ref={rootRef} className="w-full">
-      {/* Etiqueta + error */}
       <div className="flex items-center gap-2 mb-1">
         <label className="text-sm font-medium">
-          {label} {required && <span className="text-red-500">*</span>}
+          {labelText} {required && <span className="text-red-500">*</span>}
         </label>
         {error && <span className="text-xs text-red-500">{error}</span>}
       </div>
 
-      {/* Trigger como input */}
       <div className="relative">
         <button
           type="button"
@@ -143,13 +140,11 @@ export default function SectorCascadeMenu({
               <>
                 {SECTORS[sector]?.label || "—"}{subcategory ? " / " : ""}
                 {subcategory
-                  ? Object.values(SECTORS)
-                      .flatMap((s) => s.subs)
-                      .find((sub) => sub.value === subcategory)?.label
+                  ? Object.values(SECTORS).flatMap((s) => s.subs).find((sub) => sub.value === subcategory)?.label
                   : ""}
               </>
             ) : (
-              placeholder
+              placeholderText
             )}
           </span>
           <div className="flex items-center gap-2">
@@ -161,8 +156,7 @@ export default function SectorCascadeMenu({
                   clear();
                 }}
                 className="p-1 rounded hover:bg-muted"
-                aria-label="Limpiar selección"
-                title="Limpiar"
+                title={t('ui.limpiar')}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -171,14 +165,9 @@ export default function SectorCascadeMenu({
           </div>
         </button>
 
-        {/* PANEL desplegable */}
         {open && (
-          <div
-            className="absolute z-50 mt-2 w-full rounded-md border bg-white shadow-lg overflow-hidden"
-            role="menu"
-          >
+          <div className="absolute z-50 mt-2 w-full rounded-md border bg-white shadow-lg overflow-hidden" role="menu">
             <div className="flex">
-              {/* Columna izquierda: sectores (vertical) */}
               <div className="w-1/2 max-h-72 overflow-auto border-r">
                 {sectorsList.map(([key, s]) => {
                   const active = key === hoverKey;
@@ -190,7 +179,6 @@ export default function SectorCascadeMenu({
                       onMouseEnter={() => setHoverKey(key)}
                       onFocus={() => setHoverKey(key)}
                       onClick={() => {
-                        // Solo marca sector; NO cierra ni selecciona subcat todavía
                         if (key !== sector) onChange({ sector: key, subcategory: "" });
                         setHoverKey(key);
                       }}
@@ -205,7 +193,6 @@ export default function SectorCascadeMenu({
                 })}
               </div>
 
-              {/* Columna derecha: subcategorías del sector activo (vertical) */}
               <div className="w-1/2 max-h-72 overflow-auto">
                 {hoverKey && SECTORS[hoverKey]?.subs?.length ? (
                   SECTORS[hoverKey].subs.map((sub) => {
@@ -216,7 +203,7 @@ export default function SectorCascadeMenu({
                         type="button"
                         onClick={() => {
                           onChange({ sector: hoverKey, subcategory: sub.value });
-                          setOpen(false); // cerrar al elegir
+                          setOpen(false);
                         }}
                         className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/70 ${
                           selected ? "bg-muted font-medium" : ""
@@ -227,9 +214,7 @@ export default function SectorCascadeMenu({
                     );
                   })
                 ) : (
-                  <div className="px-3 py-2 text-sm text-muted-foreground">
-                    Selecciona un sector…
-                  </div>
+                  <div className="px-3 py-2 text-sm text-muted-foreground">{t('ui.selecciona-un-sector')}</div>
                 )}
               </div>
             </div>

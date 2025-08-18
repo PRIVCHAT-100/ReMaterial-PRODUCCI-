@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /** Sectores → subcategorías */
 const SECTORS: Record<
@@ -8,34 +9,34 @@ const SECTORS: Record<
   { label: string; subs: { value: string; label: string }[] }
 > = {
   construccion: {
-    label: "Construcción",
+    label: t('ui.construcci-n'),
     subs: [
-      { value: "aridos", label: "Áridos" },
-      { value: "ladrillo-ceramica", label: "Ladrillo/Cerámica" },
+      { value: "aridos", label: t('ui.ridos') },
+      { value: "ladrillo-ceramica", label: t('ui.ladrillo-cer-mica') },
       { value: "cemento-mortero", label: "Cemento/Mortero" },
       { value: "aislamientos", label: "Aislamientos" },
-      { value: "vidrio-obra", label: "Vidrio" },
+      { value: "vidrio-obra", label: t('ui.vidrio') },
       { value: "metales-obra", label: "Metales de obra" },
     ],
   },
   textil: {
     label: "Textil",
     subs: [
-      { value: "algodon", label: "Algodón" },
-      { value: "poliester", label: "Poliéster" },
+      { value: "algodon", label: t('ui.algod-n') },
+      { value: "poliester", label: t('ui.poli-ster') },
       { value: "mezclas", label: "Mezclas" },
       { value: "retales", label: "Retales" },
       { value: "hilo-bobinas", label: "Hilo/Bobinas" },
     ],
   },
   madera: {
-    label: "Madera",
+    label: t('ui.madera'),
     subs: [
       { value: "tablones", label: "Tablones" },
-      { value: "palets", label: "Palets" },
+      { value: "palets", label: t('ui.palets') },
       { value: "aglomerado", label: "Aglomerado" },
       { value: "contrachapado", label: "Contrachapado" },
-      { value: "serrin", label: "Serrín" },
+      { value: "serrin", label: t('ui.serr-n') },
     ],
   },
   metalurgia: {
@@ -44,27 +45,27 @@ const SECTORS: Record<
       { value: "acero", label: "Acero" },
       { value: "aluminio", label: "Aluminio" },
       { value: "cobre", label: "Cobre" },
-      { value: "laton", label: "Latón" },
+      { value: "laton", label: t('ui.lat-n') },
       { value: "inox", label: "Inoxidable" },
     ],
   },
   piedra: {
-    label: "Piedra y Mármol",
+    label: t('ui.piedra-y-m-rmol'),
     subs: [
-      { value: "marmol", label: "Mármol" },
+      { value: "marmol", label: t('ui.m-rmol') },
       { value: "granito", label: "Granito" },
       { value: "pizarra", label: "Pizarra" },
-      { value: "aridos-piedra", label: "Áridos" },
+      { value: "aridos-piedra", label: t('ui.ridos') },
     ],
   },
   otros: {
-    label: "Otros",
+    label: t('ui.otros'),
     subs: [
-      { value: "plastico", label: "Plástico" },
-      { value: "vidrio", label: "Vidrio" },
-      { value: "papel-carton", label: "Papel/Cartón" },
-      { value: "electronica", label: "Electrónica" },
-      { value: "maquinaria", label: "Maquinaria" },
+      { value: "plastico", label: t('ui.pl-stico') },
+      { value: "vidrio", label: t('ui.vidrio') },
+      { value: "papel-carton", label: t('ui.papel-cart-n') },
+      { value: "electronica", label: t('ui.electr-nica') },
+      { value: "maquinaria", label: t('ui.maquinaria') },
     ],
   },
 };
@@ -82,6 +83,8 @@ export default function SectorCategoriesBar({
   onSectorChange,
   onSubcategoryChange,
 }: Props) {
+  const { t } = useTranslation();
+
   const [openSector, setOpenSector] = useState<string | null>(null);
 
   const handleSectorClick = (sectorKey: string) => {

@@ -8,8 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Building, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Auth = () => {
+  const { t } = useTranslation();
+
   const navigate = useNavigate();
   const { signUp, signIn } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -34,12 +37,12 @@ const Auth = () => {
   });
 
   const sectors = [
-    { value: "construccion", label: "Construcción" },
+    { value: "construccion", label: t('ui.construcci-n') },
     { value: "textil", label: "Textil" },
-    { value: "madera", label: "Madera" },
+    { value: "madera", label: t('ui.madera') },
     { value: "metalurgia", label: "Metalurgia" },
-    { value: "piedra", label: "Piedra y Mármol" },
-    { value: "otros", label: "Otros" },
+    { value: "piedra", label: t('ui.piedra-y-m-rmol') },
+    { value: "otros", label: t('ui.otros') },
   ];
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -108,9 +111,7 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <div className="mb-6">
           <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al inicio
-          </Link>
+            <ArrowLeft className="h-4 w-4 mr-2" />{t('ui.volver-al-inicio')}</Link>
         </div>
 
         <Card>
@@ -123,8 +124,8 @@ const Auth = () => {
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                <TabsTrigger value="register">Registrarse</TabsTrigger>
+                <TabsTrigger value="login">{t('ui.iniciar-sesi-n')}</TabsTrigger>
+                <TabsTrigger value="register">{t('ui.registrarse')}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login" className="space-y-4 mt-6">
@@ -141,11 +142,11 @@ const Auth = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="login-password">Contraseña</Label>
+                    <Label htmlFor="login-password">{t('ui.contrase-a')}</Label>
                     <Input
                       id="login-password"
                       type="password"
-                      placeholder="Tu contraseña"
+                      placeholder={t('ui.tu-contrase-a')}
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
@@ -161,10 +162,10 @@ const Auth = () => {
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">Nombre *</Label>
+                      <Label htmlFor="firstName">{t('ui.nombre')}</Label>
                       <Input
                         id="firstName"
-                        placeholder="Tu nombre"
+                        placeholder={t('ui.tu-nombre')}
                         value={registerData.firstName}
                         onChange={(e) => updateRegisterData("firstName", e.target.value)}
                         required
@@ -195,22 +196,22 @@ const Auth = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="register-password">Contraseña *</Label>
+                      <Label htmlFor="register-password">{t('ui.contrase-a')}</Label>
                       <Input
                         id="register-password"
                         type="password"
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder={t('ui.m-nimo-6-caracteres')}
                         value={registerData.password}
                         onChange={(e) => updateRegisterData("password", e.target.value)}
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirmar *</Label>
+                      <Label htmlFor="confirm-password">{t('ui.confirmar')}</Label>
                       <Input
                         id="confirm-password"
                         type="password"
-                        placeholder="Repetir contraseña"
+                        placeholder={t('ui.repetir-contrase-a')}
                         value={registerData.confirmPassword}
                         onChange={(e) => updateRegisterData("confirmPassword", e.target.value)}
                         required
@@ -225,23 +226,19 @@ const Auth = () => {
                       onCheckedChange={(checked) => updateRegisterData("isSeller", checked)}
                     />
                     <Label htmlFor="isSeller" className="flex items-center gap-2">
-                      <Building className="h-4 w-4" />
-                      Quiero registrarme como empresa vendedora
-                    </Label>
+                      <Building className="h-4 w-4" />{t('ui.quiero-registrarme-como-empresa-vendedora')}</Label>
                   </div>
 
                   {registerData.isSeller && (
                     <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
                       <h4 className="font-medium flex items-center gap-2">
-                        <Building className="h-4 w-4" />
-                        Información de la Empresa
-                      </h4>
+                        <Building className="h-4 w-4" />{t('ui.informaci-n-de-la-empresa')}</h4>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="companyName">Nombre de la Empresa *</Label>
+                        <Label htmlFor="companyName">{t('ui.nombre-de-la-empresa')}</Label>
                         <Input
                           id="companyName"
-                          placeholder="Nombre de tu empresa"
+                          placeholder={t('ui.nombre-de-tu-empresa')}
                           value={registerData.companyName}
                           onChange={(e) => updateRegisterData("companyName", e.target.value)}
                           required={registerData.isSeller}
@@ -250,14 +247,14 @@ const Auth = () => {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="sector">Sector</Label>
+                          <Label htmlFor="sector">{t('ui.sector')}</Label>
                           <select
                             id="sector"
                             value={registerData.sector}
                             onChange={(e) => updateRegisterData("sector", e.target.value)}
                             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
-                            <option value="">Seleccionar sector</option>
+                            <option value="">{t('ui.seleccionar-sector')}</option>
                             {sectors.map((sector) => (
                               <option key={sector.value} value={sector.value}>
                                 {sector.label}
@@ -266,10 +263,10 @@ const Auth = () => {
                           </select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="location">Ubicación</Label>
+                          <Label htmlFor="location">{t('ui.ubicaci-n')}</Label>
                           <Input
                             id="location"
-                            placeholder="Ciudad, País"
+                            placeholder={t('ui.ciudad-pa-s')}
                             value={registerData.location}
                             onChange={(e) => updateRegisterData("location", e.target.value)}
                           />
@@ -277,20 +274,20 @@ const Auth = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Teléfono</Label>
+                        <Label htmlFor="phone">{t('ui.tel-fono')}</Label>
                         <Input
                           id="phone"
-                          placeholder="Teléfono de contacto"
+                          placeholder={t('ui.tel-fono-de-contacto')}
                           value={registerData.phone}
                           onChange={(e) => updateRegisterData("phone", e.target.value)}
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="description">Descripción</Label>
+                        <Label htmlFor="description">{t('ui.descripci-n')}</Label>
                         <textarea
                           id="description"
-                          placeholder="Describe tu empresa y los servicios que ofreces..."
+                          placeholder={t('ui.describe-tu-empresa-y-los-servicios-que-ofreces')}
                           value={registerData.description}
                           onChange={(e) => updateRegisterData("description", e.target.value)}
                           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px]"
@@ -309,7 +306,7 @@ const Auth = () => {
         </Card>
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>Al registrarte, aceptas nuestros términos de servicio y política de privacidad</p>
+          <p>{t('ui.al-registrarte-aceptas-nuestros-t-rminos-de-servic')}</p>
         </div>
       </div>
     </div>

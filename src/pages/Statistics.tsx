@@ -6,8 +6,11 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Package, Eye, Heart, MessageSquare, Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Statistics = () => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -71,7 +74,7 @@ const Statistics = () => {
           <Card>
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold mb-4">Acceso Requerido</h2>
-              <p className="text-muted-foreground">Debes iniciar sesión para ver las estadísticas.</p>
+              <p className="text-muted-foreground">{t('ui.debes-iniciar-sesi-n-para-ver-las-estad-sticas')}</p>
             </CardContent>
           </Card>
         </div>
@@ -86,8 +89,8 @@ const Statistics = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Estadísticas</h1>
-          <p className="text-muted-foreground">Analiza el rendimiento de tus productos y ventas</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t('ui.estad-sticas')}</h1>
+          <p className="text-muted-foreground">{t('ui.analiza-el-rendimiento-de-tus-productos-y-ventas')}</p>
         </div>
 
         {loading ? (
@@ -104,7 +107,7 @@ const Statistics = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Productos</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('ui.total-productos')}</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -122,22 +125,18 @@ const Statistics = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.totalViews}</div>
-                <p className="text-xs text-muted-foreground">
-                  Total de vistas de productos
-                </p>
+                <p className="text-xs text-muted-foreground">{t('ui.total-de-vistas-de-productos')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Favoritos</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('ui.favoritos')}</CardTitle>
                 <Heart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.totalFavorites}</div>
-                <p className="text-xs text-muted-foreground">
-                  Productos marcados como favoritos
-                </p>
+                <p className="text-xs text-muted-foreground">{t('ui.productos-marcados-como-favoritos')}</p>
               </CardContent>
             </Card>
 
@@ -156,14 +155,12 @@ const Statistics = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Valoración</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('ui.valoraci-n')}</CardTitle>
                 <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.avgRating}</div>
-                <p className="text-xs text-muted-foreground">
-                  Valoración promedio
-                </p>
+                <p className="text-xs text-muted-foreground">{t('ui.valoraci-n-promedio')}</p>
               </CardContent>
             </Card>
 
@@ -186,13 +183,11 @@ const Statistics = () => {
           <Card>
             <CardHeader>
               <CardTitle>Resumen del Rendimiento</CardTitle>
-              <CardDescription>
-                Análisis general de tu actividad en la plataforma
-              </CardDescription>
+              <CardDescription>{t('ui.an-lisis-general-de-tu-actividad-en-la-plataforma')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span>Productos Activos</span>
+                <span>{t('ui.productos-activos')}</span>
                 <Badge variant="secondary">{stats.activeProducts} de {stats.totalProducts}</Badge>
               </div>
               <div className="flex items-center justify-between">
@@ -202,7 +197,7 @@ const Statistics = () => {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span>Tasa de Favoritos</span>
+                <span>{t('ui.tasa-de-favoritos')}</span>
                 <Badge variant="outline">
                   {stats.totalViews > 0 ? Math.round((stats.totalFavorites / stats.totalViews) * 100) : 0}%
                 </Badge>

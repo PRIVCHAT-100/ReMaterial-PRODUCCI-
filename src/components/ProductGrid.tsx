@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import FiltersSidebar, { FiltersState } from "./FiltersSidebar";
+import { useTranslation } from "react-i18next";
 
 interface ProductGridProps {
   selectedCategory: string;
@@ -61,6 +62,8 @@ const ProductGrid = ({
   categorySlug,
   subSlug,
 }: ProductGridProps) => {
+  const { t } = useTranslation();
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"recent" | "price-low" | "price-high">("recent");
   const [sortOpen, setSortOpen] = useState(false);
@@ -393,16 +396,14 @@ const ProductGrid = ({
         {/* Cabecera sección */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-semibold text-foreground">Materiales disponibles</h2>
+            <h2 className="text-2xl font-semibold text-foreground">{t('ui.materiales-disponibles')}</h2>
             <p className="text-muted-foreground">{resultsText}</p>
           </div>
 
           <div className="flex items-center gap-3">
             {/* Filtros móvil */}
             <Button variant="outline" className="sm:hidden" onClick={() => setShowFiltersMobile((s) => !s)}>
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
-              Filtros
-            </Button>
+              <SlidersHorizontal className="h-4 w-4 mr-2" />{t('ui.filtros')}</Button>
 
             {/* Mostrar 12 / 18 / 24 */}
             <div className="hidden sm:inline-flex border border-border rounded-md overflow-hidden">
