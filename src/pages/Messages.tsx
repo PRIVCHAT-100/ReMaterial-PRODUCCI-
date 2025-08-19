@@ -793,7 +793,7 @@ const Messages = () => {
                 <>
                   <CardHeader className="border-b">
                     <div className="flex items-center space-x-3">
-                      {(() => { const otherParty = selectedConversation.buyer_id === user.id ? selectedConversation.seller : selectedConversation.buyer; return (<ProfileAvatar src={otherParty?.logo_url} name={(otherParty?.company_name || `${otherParty?.first_name || ""} ${otherParty?.last_name || ""}`.trim() || "Usuario")} />); })()}
+                      <ProfileAvatar src={(selectedConversation.buyer_id === user.id ? selectedConversation.seller?.logo_url : selectedConversation.buyer?.logo_url)} name={(selectedConversation.buyer_id === user.id ? (selectedConversation.seller?.company_name || `${selectedConversation.seller?.first_name || ""} ${selectedConversation.seller?.last_name || ""}`.trim()) : (selectedConversation.buyer?.company_name || `${selectedConversation.buyer?.first_name || ""} ${selectedConversation.buyer?.last_name || ""}`.trim())) || "Usuario"} />
                       <div>
                         <h3 className="font-semibold">
                           {selectedConversation.buyer_id === user.id

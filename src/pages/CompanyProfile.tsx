@@ -177,7 +177,7 @@ const CompanyProfile = () => {
           <div className="lg:col-span-1">
             <Card>
               <CardHeader className="text-center">
-                <ProfileAvatar className="h-24 w-24 mx-auto mb-4" src={ company.logo_url } name={ company.company_name } />
+                <ProfileAvatar className="h-24 w-24 mx-auto mb-4" src={company.logo_url} name={company.company_name} />
                 <CardTitle className="text-xl">{company.company_name}</CardTitle>
                 <Badge variant="secondary" className="w-fit mx-auto">
                   {company.sector || 'Sector no especificado'}
