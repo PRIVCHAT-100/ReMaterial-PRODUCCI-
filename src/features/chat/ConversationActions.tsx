@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { renameConversation, setArchived, softDelete, mute, unmute } from "./chatApi";
 import { useTranslation } from "react-i18next";
 
@@ -21,6 +22,13 @@ export default function ConversationActions({ conversation, userId, onChange }: 
 
   const [open, setOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Abre confirmación tras cerrar el menú de 3 puntos
+  const requestDelete = () => {
+    setOpen(false);
+    setTimeout(() => setConfirmOpen(true), 0);
+  };
   const [newTitle, setNewTitle] = useState("");
 
   // refs para posicionamiento/close
@@ -92,7 +100,8 @@ export default function ConversationActions({ conversation, userId, onChange }: 
   const doDelete = async () => {
     await softDelete(conversation.id, userId);
     setOpen(false);
-    onChange?.();
+    setConfirmOpen(false);
+onChange?.();
   };
 
   const doMute = async (hours: number) => {
@@ -107,6 +116,8 @@ export default function ConversationActions({ conversation, userId, onChange }: 
     setOpen(false);
     onChange?.();
   };
+
+  useEffect(() => { if (open) setConfirmOpen(false); }, [open]);
 
   return (
     <div className="relative">
@@ -186,7 +197,7 @@ export default function ConversationActions({ conversation, userId, onChange }: 
                   Quitar silencio
                 </Button>
 
-                <Button variant="destructive" className="w-full" onClick={doDelete}>{t('ui.eliminar-solo-para-m')}</Button>
+                <Button variant="destructive" className="w-full" onClick={requestDelete}>{t('ui.eliminar-solo-para-m')}</Button>
               </>
             ) : (
               <div className="space-y-2">
@@ -221,6 +232,21 @@ export default function ConversationActions({ conversation, userId, onChange }: 
           </div>,
           document.body
         )}
-    </div>
+    
+
+{/* Confirmación de borrado: controlada y solo se abre tras pulsar Eliminar */}
+<AlertDialog open={confirmOpen} onOpenChange={() => { /* controlado por estado */ }}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>¿Eliminar esta conversación?</AlertDialogTitle>
+      <AlertDialogDescription>Se eliminará solo para tu cuenta. No se puede deshacer.</AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel onClick={() => setConfirmOpen(false)}>Cancelar</AlertDialogCancel>
+      <AlertDialogAction onClick={async () => { await doDelete(); setConfirmOpen(false); }}>Eliminar</AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+</div>
   );
 }

@@ -15,11 +15,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import {
-  User, Building2, Bell, Shield, Globe, MapPin, Phone, Mail
-} from "lucide-react";
+import { Bell, Building2, Globe, Mail, MapPin, Phone, Shield, User} from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 type Profile = {
   id: string;
   email?: string | null;
@@ -30,6 +28,17 @@ type Profile = {
   location?: string | null;
   website?: string | null;
   description?: string | null; // si usas "bio", cambia aquí y abajo
+
+tax_id?: string | null;
+logo_url?: string | null;
+social_links?: string | null;
+certifications?: string | null;
+address_line1?: string | null;
+city?: string | null;
+province?: string | null;
+postal_code?: string | null;
+country?: string | null;
+verification_status?: string | null;
 };
 
 export default function Settings()
@@ -54,7 +63,19 @@ export default function Settings()
     location: "",
     website: "",
     description: "",
-  });
+  
+tax_id: "",
+logo_url: "",
+social_links: "",
+certifications: "",
+address_line1: "",
+city: "",
+province: "",
+postal_code: "",
+country: "",
+verification_status: "",
+}
+  );
 
   // Notificaciones (guardadas en user metadata para no depender de columnas nuevas)
   const [notifyMessages, setNotifyMessages] = useState(true);
@@ -98,7 +119,18 @@ export default function Settings()
             location: p.location ?? "",
             website: p.website ?? "",
             description: p.description ?? "",
-          });
+          
+tax_id: p.tax_id ?? "",
+logo_url: p.logo_url ?? "",
+social_links: p.social_links ?? "",
+certifications: p.certifications ?? "",
+address_line1: p.address_line1 ?? "",
+city: p.city ?? "",
+province: p.province ?? "",
+postal_code: p.postal_code ?? "",
+country: p.country ?? "",
+verification_status: p.verification_status ?? "",
+});
           setNotifyMessages(md.notifyMessages ?? true);
           setNotifyMarketing(md.notifyMarketing ?? false);
           setNotifyProductUpdates(md.notifyProductUpdates ?? true);
@@ -129,6 +161,18 @@ export default function Settings()
           location: form.location?.trim() || null,
           website: form.website?.trim() || null,
           description: form.description?.trim() || null,
+
+tax_id: form.tax_id?.trim() || null,
+logo_url: form.logo_url?.trim() || null,
+social_links: form.social_links?.trim() || null,
+certifications: form.certifications?.trim() || null,
+address_line1: form.address_line1?.trim() || null,
+city: form.city?.trim() || null,
+province: form.province?.trim() || null,
+postal_code: form.postal_code?.trim() || null,
+country: form.country?.trim() || null,
+// verification_status lo gestiona admin
+
         })
         .eq("id", user.id);
       if (error) throw error;
@@ -329,7 +373,91 @@ export default function Settings()
                   </div>
                 </div>
 
-                <Separator />
+                
+<div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+    <Label>CIF/NIF</Label>
+    <Input
+      value={form.tax_id || ""}
+      onChange={(e) => setForm({ ...form, tax_id: e.target.value })}
+      placeholder="B12345678"
+      disabled={disabled}
+    />
+  </div>
+  <div>
+    <Label>Dirección</Label>
+    <Input
+      value={form.address_line1 || ""}
+      onChange={(e) => setForm({ ...form, address_line1: e.target.value })}
+      placeholder="C/ Ejemplo, 123, 2ºB"
+      disabled={disabled}
+    />
+  </div>
+  <div>
+    <Label>Ciudad</Label>
+    <Input
+      value={form.city || ""}
+      onChange={(e) => setForm({ ...form, city: e.target.value })}
+      placeholder="Barcelona"
+      disabled={disabled}
+    />
+  </div>
+  <div>
+    <Label>Provincia</Label>
+    <Input
+      value={form.province || ""}
+      onChange={(e) => setForm({ ...form, province: e.target.value })}
+      placeholder="Barcelona"
+      disabled={disabled}
+    />
+  </div>
+  <div>
+    <Label>Código Postal</Label>
+    <Input
+      value={form.postal_code || ""}
+      onChange={(e) => setForm({ ...form, postal_code: e.target.value })}
+      placeholder="08001"
+      disabled={disabled}
+    />
+  </div>
+  <div>
+    <Label>País</Label>
+    <Input
+      value={form.country || ""}
+      onChange={(e) => setForm({ ...form, country: e.target.value })}
+      placeholder="España"
+      disabled={disabled}
+    />
+  </div>
+  <div className="md:col-span-2">
+    <Label>Logo URL</Label>
+    <Input
+      value={form.logo_url || ""}
+      onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+      placeholder="https://..."
+      disabled={disabled}
+    />
+  </div>
+  <div className="md:col-span-2">
+    <Label>Redes Sociales</Label>
+    <Input
+      value={form.social_links || ""}
+      onChange={(e) => setForm({ ...form, social_links: e.target.value })}
+      placeholder="https://linkedin.com/company/miempresa, https://instagram.com/miempresa"
+      disabled={disabled}
+    />
+  </div>
+  <div className="md:col-span-2">
+    <Label>Certificaciones</Label>
+    <Input
+      value={form.certifications || ""}
+      onChange={(e) => setForm({ ...form, certifications: e.target.value })}
+      placeholder="ISO 9001, ISO 14001..."
+      disabled={disabled}
+    />
+  </div>
+</div>
+<Separator />
                 <div className="flex justify-end gap-2">
                   <Button onClick={saveProfile} disabled={disabled} type="button">{t('ui.guardar-cambios')}</Button>
                 </div>

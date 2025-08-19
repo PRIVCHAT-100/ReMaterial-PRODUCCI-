@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
-
-import ProfileAvatar from "@/components/common/ProfileAvatar";
+import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -9,97 +8,97 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Globe, 
-  Star, 
-  Package, 
-  ExternalLink,
-  MessageSquare,
-  Award,
-  Building2
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import ProductCard from "@/components/ProductCard";
-import { useTranslation } from "react-i18next";
+import ProfileAvatar from "@/components/common/ProfileAvatar";
+import { useToast } from "@/hooks/use-toast";
+import { MapPin, Phone, Mail, Globe, Star, ExternalLink, Award, Building2, Package } from "lucide-react";
 
-const CompanyProfile = () => {
+type Company = {
+  id: string;
+  email?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  company_name?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  website?: string | null;
+  description?: string | null;
+  sector?: string | null;
+  logo_url?: string | null;
+  social_links?: string | null;
+  tax_id?: string | null;
+  certifications?: string | null;
+  address_line1?: string | null;
+  city?: string | null;
+  province?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  verification_status?: string | null;
+};
+
+export default function CompanyProfile() {
   const { t } = useTranslation();
-
-  const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
-
-  // 👇 para “Volver al producto”
   const navigate = useNavigate();
-  const location = useLocation() as { state?: { from?: string } };
-  const backToProduct = location.state?.from; // ej. "/product/xxxxx"
+  const locationNav = useLocation() as { state?: { from?: string } };
+  const backToProduct = locationNav.state?.from;
+  const { id } = useParams<{ id: string }>();
 
-  const [company, setCompany] = useState<any>(null);
-  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    rating: 0,
-    reviews: 0,
-  });
+  const [company, setCompany] = useState<Company | null>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [stats, setStats] = useState({ totalProducts: 0, rating: 0, reviews: 0 });
 
   useEffect(() => {
-    if (id) {
-      fetchCompanyData();
-    }
-  }, [id]);
+    let ignore = false;
+    const load = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select(`
+            id, email, first_name, last_name, company_name, phone, location, website, description,
+            sector, logo_url, social_links, tax_id, certifications,
+            address_line1, city, province, postal_code, country, verification_status
+          `)
+          .eq("id", id)
+          .single();
+        if (profileError) throw profileError;
 
-  const fetchCompanyData = async () => {
-    try {
-      setLoading(true);
-      
-      // Perfil de empresa
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
+        const { data: productsData, error: productsError } = await supabase
+          .from("products")
+          .select(`
+            id, title, price, images, category, shipping_available, location,
+            seller:profiles!products_seller_id_fkey ( id, first_name, last_name, company_name )
+          `)
+          .eq("seller_id", id)
+          .order("created_at", { ascending: false });
+        if (productsError) throw productsError;
 
-      if (profileError) throw profileError;
-      
-      // Productos de la empresa (desambiguando la relación con profiles)
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select(`
-          *,
-          seller:profiles!products_seller_id_fkey (
-            id,
-            first_name,
-            last_name,
-            company_name
-          )
-        `)
-        .eq('seller_id', id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-
-      if (productsError) throw productsError;
-
-      setCompany(profileData);
-      setProducts(productsData || []);
-      setStats({
-        totalProducts: productsData?.length || 0,
-        rating: 4.5, // Mock rating
-        reviews: Math.floor(Math.random() * 50) + 5, // Mock reviews
-      });
-    } catch (error: any) {
-      console.error('Error fetching company data:', error);
-      toast({
-        title: "Error",
-        description: error?.message || "No se pudo cargar la información de la empresa",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (!ignore) {
+          setCompany(profileData as Company);
+          setProducts(productsData || []);
+          setStats({
+            totalProducts: productsData?.length || 0,
+            rating: 4.5,
+            reviews: 0,
+          });
+        }
+      } catch (error: any) {
+        console.error(error);
+        toast({
+          title: "Error",
+          description: error?.message || "No se pudo cargar la información de la empresa",
+          variant: "destructive",
+        });
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    load();
+    return () => { ignore = true; };
+  }, [id, toast]);
 
   if (loading) {
     return (
@@ -107,14 +106,12 @@ const CompanyProfile = () => {
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
+            <div className="h-8 bg-muted rounded w-1/3" />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1">
-                <div className="h-96 bg-muted rounded"></div>
-              </div>
+              <div className="lg:col-span-1"><div className="h-96 bg-muted rounded" /></div>
               <div className="lg:col-span-2 space-y-4">
-                <div className="h-48 bg-muted rounded"></div>
-                <div className="h-32 bg-muted rounded"></div>
+                <div className="h-48 bg-muted rounded" />
+                <div className="h-32 bg-muted rounded" />
               </div>
             </div>
           </div>
@@ -131,10 +128,10 @@ const CompanyProfile = () => {
         <div className="container mx-auto px-4 py-8">
           <Card>
             <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-bold mb-4">{t('ui.empresa-no-encontrada')}</h2>
-              <p className="text-muted-foreground mb-4">{t('ui.la-empresa-que-buscas-no-existe-o-no-est-disponibl')}</p>
+              <h2 className="text-2xl font-bold mb-4">{t('ui.empresa-no-encontrada') || "Empresa no encontrada"}</h2>
+              <p className="text-muted-foreground mb-4">{t('ui.la-empresa-que-buscas-no-existe-o-no-est-disponibl') || "La empresa no existe o no está disponible."}</p>
               <Button asChild>
-                <Link to="/companies">{t('ui.ver-todas-las-empresas')}</Link>
+                <Link to="/companies">{t('ui.ver-todas-las-empresas') || "Ver todas las empresas"}</Link>
               </Button>
             </CardContent>
           </Card>
@@ -147,87 +144,90 @@ const CompanyProfile = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex mb-6" aria-label="Breadcrumb">
           <ol className="inline-flex items-center space-x-1 md:space-x-3">
             <li className="inline-flex items-center">
-              <Link to="/" className="text-muted-foreground hover:text-foreground">
-                Inicio
-              </Link>
+              <Link to="/" className="text-muted-foreground hover:text-foreground">Inicio</Link>
             </li>
             <li>
               <div className="flex items-center">
                 <span className="mx-2 text-muted-foreground">/</span>
-                <Link to="/companies" className="text-muted-foreground hover:text-foreground">{t('ui.empresas')}</Link>
-              </div>
-            </li>
-            <li aria-current="page">
-              <div className="flex items-center">
-                <span className="mx-2 text-muted-foreground">/</span>
-                <span className="text-foreground">{company.company_name}</span>
+                <span className="text-foreground">{company.company_name || `${company.first_name || ""} ${company.last_name || ""}`.trim()}</span>
               </div>
             </li>
           </ol>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Company Information */}
+          {/* Info principal empresa */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader className="text-center">
-                <ProfileAvatar className="h-24 w-24 mx-auto mb-4" src={company.logo_url} name={company.company_name} />
-                <CardTitle className="text-xl">{company.company_name}</CardTitle>
-                <Badge variant="secondary" className="w-fit mx-auto">
-                  {company.sector || 'Sector no especificado'}
-                </Badge>
+                <ProfileAvatar className="h-24 w-24 mx-auto mb-4" src={company.logo_url || undefined} name={company.company_name || undefined} />
+                <CardTitle className="text-xl">{company.company_name || "Empresa"}</CardTitle>
+                <Badge variant="secondary" className="w-fit mx-auto">{company.sector || "Sector no especificado"}</Badge>
+                {company.verification_status && (
+                  <div className="mt-2">
+                    <Badge variant={company.verification_status === 'verified' ? 'default' : 'secondary'} className="w-fit mx-auto">
+                      {company.verification_status === 'verified' ? 'Empresa verificada' : company.verification_status === 'pending' ? 'Verificación pendiente' : 'No verificada'}
+                    </Badge>
+                  </div>
+                )}
                 <div className="flex items-center justify-center mt-2 gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`h-4 w-4 ${star <= stats.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                    />
+                  {[1,2,3,4,5].map((star) => (
+                    <Star key={star} className={`h-4 w-4 ${star <= Math.round(stats.rating) ? "text-yellow-500" : "text-muted-foreground"}`} />
                   ))}
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    ({stats.reviews} reseñas)
-                  </span>
                 </div>
               </CardHeader>
-              
               <CardContent className="space-y-4">
-                {/* Contact Information */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span>{company.email}</span>
-                  </div>
-                  
+                {company.description && (
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">{company.description}</p>
+                )}
+
+                <Separator />
+
+                <div className="space-y-2">
                   {company.phone && (
                     <div className="flex items-center gap-2 text-sm">
                       <Phone className="h-4 w-4 text-muted-foreground" />
                       <span>{company.phone}</span>
                     </div>
                   )}
-                  
+
                   {company.location && (
                     <div className="flex items-center gap-2 text-sm">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <span>{company.location}</span>
                     </div>
                   )}
-                  
+
+                  {company.address_line1 && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span>{company.address_line1}</span>
+                    </div>
+                  )}
+
+                  {(company.postal_code || company.city || company.province || company.country) && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span>{[company.postal_code, company.city, company.province, company.country].filter(Boolean).join(", ")}</span>
+                    </div>
+                  )}
+
                   {company.website && (
                     <div className="flex items-center gap-2 text-sm">
                       <Globe className="h-4 w-4 text-muted-foreground" />
-                      <a 
-                        href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline flex items-center gap-1"
+                      <a
+                        href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
+                        target="_blank" rel="noopener"
+                        className="hover:underline"
                       >
                         {company.website}
-                        <ExternalLink className="h-3 w-3" />
+                        <ExternalLink className="h-3 w-3 inline ml-1" />
                       </a>
                     </div>
                   )}
@@ -238,87 +238,33 @@ const CompanyProfile = () => {
                       <span>CIF/NIF: {company.tax_id}</span>
                     </div>
                   )}
-                </div>
 
-                <Separator />
-
-                {/* Statistics */}
-                <div className="grid grid-cols-1 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-primary">{stats.totalProducts}</div>
-                    <div className="text-sm text-muted-foreground">{t('ui.productos-activos')}</div>
-                  </div>
-                </div>
-
-                {company.certifications && (
-                  <>
-                    <Separator />
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Award className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Certificaciones</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{company.certifications}</p>
+                  {company.social_links && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      {/^https?:\/\//.test(company.social_links) ? (
+                        <a href={company.social_links} target="_blank" rel="noopener" className="hover:underline">
+                          {company.social_links}
+                        </a>
+                      ) : (
+                        <span>{company.social_links}</span>
+                      )}
                     </div>
-                  </>
-                )}
-
-                <Separator />
-
-                {/* Action Buttons */}
-                <div className="space-y-2">
-                  {/* Aparece solo si venías desde una ficha de producto */}
-                  {backToProduct && (
-                    <Button 
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => navigate(backToProduct)}
-                    >
-                      ← Volver al producto
-                    </Button>
                   )}
 
-                  <Button 
-                    className="w-full"
-                    onClick={() => window.location.href = `/messages?seller=${company.id}`}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />{t('ui.contactar-empresa')}</Button>
+                  {company.certifications && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Award className="h-4 w-4 text-muted-foreground" />
+                      <span>{company.certifications}</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Company Details and Products */}
+          {/* Productos */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Company Description */}
-            {company.description && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('ui.sobre-la-empresa')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {company.description}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Social Links */}
-            {company.social_links && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Redes sociales</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    {company.social_links}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Products Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -328,46 +274,44 @@ const CompanyProfile = () => {
               </CardHeader>
               <CardContent>
                 {products.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {products.map((product) => (
-                      <ProductCard 
-                        key={product.id} 
+                      <ProductCard
+                        key={product.id}
                         id={product.id}
                         title={product.title}
                         price={`€${product.price}`}
-                        location={product.location || 'No especificada'}
-                        image={product.images?.[0] || '/placeholder.svg'}
+                        location={product.location || "No especificada"}
+                        image={product.images?.[0] || "/placeholder.svg"}
                         category={product.category}
                         shippingAvailable={!!product.shipping_available}
                         seller={{
-                          id: product.seller?.id || '',
-                          name:
-                            product.seller?.company_name ||
-                            `${product.seller?.first_name || ""} ${product.seller?.last_name || ""}`.trim() ||
-                            'Vendedor',
+                          id: product.seller?.id || "",
+                          name: product.seller?.company_name || `${product.seller?.first_name || ""} ${product.seller?.last_name || ""}`.trim() || "Vendedor",
                           rating: 4.5,
                           verified: true
                         }}
-                        description={product.description || ''}
                       />
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">{t('ui.no-hay-productos-disponibles')}</h3>
-                    <p className="text-muted-foreground">{t('ui.esta-empresa-a-n-no-ha-publicado-productos')}</p>
+                  <div className="text-center py-10">
+                    <p className="text-muted-foreground">{t('ui.esta-empresa-a-n-no-ha-publicado-productos') || "Esta empresa aún no ha publicado productos."}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {backToProduct && (
+              <div className="flex justify-end">
+                <Button onClick={() => navigate(backToProduct)}>Volver al producto</Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );
-};
-
-export default CompanyProfile;
+}
