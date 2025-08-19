@@ -20,6 +20,7 @@ const Auth = () => {
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Register state
   const [registerData, setRegisterData] = useState({
@@ -49,11 +50,20 @@ const Auth = () => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) return;
 
+    setLoginError(null);
     setLoading(true);
     try {
-      await signIn(loginEmail, loginPassword);
+      await signIn(loginEmail.trim(), loginPassword.trim());
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
+      const msg = (error?.message || "").toLowerCase();
+      let friendly = "No se pudo iniciar sesión. Revisa email y contraseña.";
+      if (msg.includes("invalid login credentials")) {
+        friendly = "Email o contraseña incorrectos. Asegúrate de no tener espacios y que el email esté confirmado.";
+      } else if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
+        friendly = "Tu email no está confirmado. Revisa tu bandeja de entrada y confirma tu cuenta.";
+      }
+      setLoginError(friendly);
       console.error("Error signing in:", error);
     } finally {
       setLoading(false);

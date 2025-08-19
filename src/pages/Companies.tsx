@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+
+import ProfileAvatar from "@/components/common/ProfileAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -6,7 +8,6 @@ import BannerHero from "@/components/BannerHero";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Star, Package, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -214,13 +215,7 @@ const Companies = () => {
               <Card key={company.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback>
-                        {(company.company_name || "ER")
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <ProfileAvatar className="h-12 w-12" src={company.logo_url} name={company.company_name} />
 
                     <div className="flex-1">
                       <div className="flex items-center gap-2">

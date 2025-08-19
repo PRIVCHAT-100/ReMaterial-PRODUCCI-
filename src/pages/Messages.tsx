@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useLayoutEffect, useMemo } from "react";
+
+import ProfileAvatar from "@/components/common/ProfileAvatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
@@ -6,7 +8,6 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Send, MessageSquare, Search, Package, Users } from "lucide-react";
@@ -726,11 +727,7 @@ const Messages = () => {
                         }`}
                       >
                         <div className="flex items-start space-x-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-primary text-primary-foreground">
-                              {otherUser?.company_name?.charAt(0) || "U"}
-                            </AvatarFallback>
-                          </Avatar>
+                          <ProfileAvatar className="h-10 w-10" src={otherUser?.logo_url} name={(otherUser?.company_name || `${otherUser?.first_name || ""} ${otherUser?.last_name || ""}`.trim() || "Usuario")} />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
                               <p className="text-sm font-medium truncate">
@@ -796,13 +793,7 @@ const Messages = () => {
                 <>
                   <CardHeader className="border-b">
                     <div className="flex items-center space-x-3">
-                      <Avatar>
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          {selectedConversation.buyer_id === user.id
-                            ? selectedConversation.seller?.company_name?.charAt(0)
-                            : selectedConversation.buyer?.company_name?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                      {(() => { const otherParty = selectedConversation.buyer_id === user.id ? selectedConversation.seller : selectedConversation.buyer; return (<ProfileAvatar src={otherParty?.logo_url} name={(otherParty?.company_name || `${otherParty?.first_name || ""} ${otherParty?.last_name || ""}`.trim() || "Usuario")} />); })()}
                       <div>
                         <h3 className="font-semibold">
                           {selectedConversation.buyer_id === user.id

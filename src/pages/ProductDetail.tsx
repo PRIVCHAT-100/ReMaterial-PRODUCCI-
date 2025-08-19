@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+
+import ProfileAvatar from "@/components/common/ProfileAvatar";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +9,6 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   MapPin, 
   Calendar, 
@@ -25,11 +26,8 @@ import {
 import { PaymentDialog } from "@/components/payment/PaymentDialog";
 import { useToast } from "@/hooks/use-toast";
 import CounterOfferDialog from "@/components/CounterOfferDialog";
-import { useTranslation } from "react-i18next";
 
 const ProductDetail = () => {
-  const { t } = useTranslation();
-
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -242,7 +240,9 @@ const ProductDetail = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-2 mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} type="button">
-            <ArrowLeft className="h-4 w-4 mr-2" />{t('ui.volver')}</Button>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -375,7 +375,9 @@ const ProductDetail = () => {
                   className="w-full"
                   type="button"
                   onClick={reserveDirect}
-                >{t('ui.marcar-como-reservado-precio-acordado')}</Button>
+                >
+                  Marcar como RESERVADO (precio acordado)
+                </Button>
               )}
 
               {/* 🆕 Quitar reserva (solo vendedor y si está reservado) */}
@@ -396,13 +398,17 @@ const ProductDetail = () => {
                   variant="outline"
                   className="w-full"
                   type="button"
-                  onClick={() => navigate(`/product/${product.id}/edit`, { state: { product } })}
+                  onClick={() => navigate(`/edit/${product.id}`, { state: { product } })}
                 >
-                  <Pencil className="h-4 w-4 mr-2" />{t('ui.editar-producto')}</Button>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar producto
+                </Button>
               )}
 
               <Button onClick={handleContact} className="w-full" type="button">
-                <MessageSquare className="h-4 w-4 mr-2" />{t('ui.contactar-vendedor')}</Button>
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Contactar Vendedor
+              </Button>
 
               <Button 
                 variant="outline"
@@ -425,7 +431,9 @@ const ProductDetail = () => {
                   className="w-full"
                   onClick={() => setPaymentDialogOpen(true)}
                 >
-                  <ShoppingCart className="h-4 w-4 mr-2" />{t('ui.comprar-directamente')}</Button>
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Comprar Directamente
+                </Button>
               )}
             </div>
 
@@ -434,11 +442,7 @@ const ProductDetail = () => {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-start space-x-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {seller.company_name?.charAt(0) || 'E'}
-                      </AvatarFallback>
-                    </Avatar>
+                    <ProfileAvatar className="h-12 w-12" name={ seller?.company_name || user?.email || "Perfil" } />
                     <div className="flex-1">
                       <h3 className="font-semibold">{seller.company_name}</h3>
                       <div className="flex items-center mt-1">
@@ -467,7 +471,7 @@ const ProductDetail = () => {
                         variant="outline" 
                         size="sm" 
                         className="mt-3 w-full"
-                        onClick={() => navigate(`/empresa/${seller.id}`, { state: { from: `/product/${product.id}` } })}
+                        onClick={() => navigate(`/empresa/${seller.id}`, { state: { from: `/products/${product.id}` } })}
                       >
                         Ver Perfil Completo
                       </Button>
@@ -483,7 +487,7 @@ const ProductDetail = () => {
         <div className="mt-8">
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">{t('ui.descripci-n-del-producto')}</h2>
+              <h2 className="text-xl font-semibold mb-4">Descripción del Producto</h2>
               <div className="prose max-w-none">
                 <p className="text-muted-foreground whitespace-pre-wrap">{product.description}</p>
               </div>

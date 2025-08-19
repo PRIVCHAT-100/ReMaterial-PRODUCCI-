@@ -8,5 +8,14 @@
   "confirm": "Confirm",
   "interface_language": "Interface language",
   "interface_language_desc": "Select the language for system texts.",
-  "search_placeholder": "What material are you looking for? e.g., marble, steel, textile..."
+  "search_placeholder": "What material are you looking for? e.g., marble, steel, textile...",
+  "ui": {
+    "selecciona-producto-para-filtrar-por-tipo-de-material-sector-usa-los-sectores-que-las-empresas-declaran-en-su-perfil": "Product: filter by material type. Sector: use the company's declared sectors.",
+    "chips-de-categor-as-scroll-horizontal-en-mobile": "Category chips (horizontal scroll on mobile)",
+    "modo-de-categor-as": "Categories mode",
+    "onsearchchange-e-target-value-placeholder-buscar-por-nombre-material-ubicaci-n-classname-pl-10-searchquery": "Search by name, material or location",
+    "onmodechange-producto-producto": "Product",
+    "oncategorychange-classname-whitespace-nowrap-todo": "All",
+    "onmodechange-sector-sector": "Sector"
+  }
 }

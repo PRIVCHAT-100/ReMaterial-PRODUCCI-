@@ -8,5 +8,14 @@
   "confirm": "Confirmar",
   "interface_language": "Idioma de la interfície",
   "interface_language_desc": "Selecciona l'idioma dels textos predefinits.",
-  "search_placeholder": "Quin material busques? Ex: marbre, acer, tèxtil..."
+  "search_placeholder": "Quin material busques? Ex: marbre, acer, tèxtil...",
+  "ui": {
+    "selecciona-producto-para-filtrar-por-tipo-de-material-sector-usa-los-sectores-que-las-empresas-declaran-en-su-perfil": "Producte: filtra per tipus de material. Sector: usa els sectors declarats al perfil d'empresa.",
+    "chips-de-categor-as-scroll-horizontal-en-mobile": "Xips de categories (desplaçament horitzontal en mòbil)",
+    "modo-de-categor-as": "Mode de categories",
+    "onsearchchange-e-target-value-placeholder-buscar-por-nombre-material-ubicaci-n-classname-pl-10-searchquery": "Cerca per nom, material o ubicació",
+    "onmodechange-producto-producto": "Producte",
+    "oncategorychange-classname-whitespace-nowrap-todo": "Tot",
+    "onmodechange-sector-sector": "Sector"
+  }
 }

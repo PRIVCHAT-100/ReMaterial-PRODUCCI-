@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "react-i18next";
 
 interface ProductCardProps {
   id: string;
@@ -38,8 +37,6 @@ const ProductCard = ({
   isFavorite = false,
   onToggleFavorite
 }: ProductCardProps) => {
-  const { t } = useTranslation();
-
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -129,8 +126,10 @@ const ProductCard = ({
         {/* Actions */}
         <div className="flex gap-2 pt-2">
           <Button variant="outline" size="sm" className="flex-1" onClick={handleContact}>
-            <MessageCircle className="h-4 w-4 mr-2" />{t('ui.contactar')}</Button>
-          <Button size="sm" className="flex-1" onClick={() => navigate(`/product/${id}`)}>
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Contactar
+          </Button>
+          <Button size="sm" className="flex-1" onClick={() => navigate(`/products/${id}`)}>
             Ver detalles
           </Button>
         </div>

@@ -32,11 +32,14 @@ import Terms from "@/pages/Terms";
 import RepairData from "@/pages/RepairData";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
+import { useTranslation } from "react-i18next";
 
 const queryClient = new QueryClient();
 const maintenance = import.meta.env.VITE_MAINTENANCE === 'true';
 
 function MaintenanceScreen() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen grid place-items-center bg-background text-foreground p-6">
       <div className="max-w-xl text-center">
@@ -45,7 +48,8 @@ function MaintenanceScreen() {
           Volvemos en breve. Gracias por tu paciencia.
         </p>
         <small className="opacity-70">
-          Si ves esto por error, revisa la variable <code>VITE_MAINTENANCE</code> y vuelve a desplegar.
+          {t('ui.si-ves-esto-por-error-revisa-la-variable')}
+          <code>VITE_MAINTENANCE</code> y vuelve a desplegar.
         </small>
       </div>
     </div>
@@ -77,10 +81,22 @@ const App: React.FC = () => {
             <ScrollToTop />
             <LanguageNudge />
             <Routes>
+              {/* Públicas */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
 
-              {/* Rutas protegidas */}
+              {/* Públicas: detalle de producto */}
+              <Route path="/products/:id" element={<ProductDetail />} />
+              {/* ➕ ALIAS nuevo para tu error reportado */}
+              <Route path="/product/:id" element={<ProductDetail />} />
+
+              {/* Legales / públicas */}
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/repair-data" element={<RepairData />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+
+              {/* Protegidas */}
               <Route
                 path="/profile"
                 element={
@@ -153,6 +169,25 @@ const App: React.FC = () => {
                   </PrivateRoute>
                 }
               />
+              {/* ➕ ALIAS nuevo para tu error reportado */}
+              <Route
+                path="/company/:id"
+                element={
+                  <PrivateRoute>
+                    <CompanyProfile />
+                  </PrivateRoute>
+                }
+              />
+              {/* ➕ ALIAS nuevo en español para tu error reportado */}
+              <Route
+                path="/empresa/:id"
+                element={
+                  <PrivateRoute>
+                    <CompanyProfile />
+                  </PrivateRoute>
+                }
+              />
+
               <Route
                 path="/category/:category"
                 element={
@@ -169,6 +204,16 @@ const App: React.FC = () => {
                   </PrivateRoute>
                 }
               />
+              {/* ➕ ALIAS nuevo: /analytics → Statistics */}
+              <Route
+                path="/analytics"
+                element={
+                  <PrivateRoute>
+                    <Statistics />
+                  </PrivateRoute>
+                }
+              />
+
               <Route
                 path="/settings"
                 element={
@@ -177,13 +222,6 @@ const App: React.FC = () => {
                   </PrivateRoute>
                 }
               />
-
-              {/* Públicas / comunes */}
-              <Route path="/products/:id" element={<ProductDetail />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/repair-data" element={<RepairData />} />
-              <Route path="/payment-success" element={<PaymentSuccess />} />
 
               {/* 404 */}
               <Route path="*" element={<NotFound />} />

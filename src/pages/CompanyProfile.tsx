@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
+
+import ProfileAvatar from "@/components/common/ProfileAvatar";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -176,15 +177,7 @@ const CompanyProfile = () => {
           <div className="lg:col-span-1">
             <Card>
               <CardHeader className="text-center">
-                <Avatar className="h-24 w-24 mx-auto mb-4">
-                  {company.logo_url ? (
-                    <AvatarImage src={company.logo_url} alt={company.company_name} />
-                  ) : (
-                    <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                      {company.company_name?.charAt(0) || 'E'}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
+                <ProfileAvatar className="h-24 w-24 mx-auto mb-4" src={ company.logo_url } name={ company.company_name } />
                 <CardTitle className="text-xl">{company.company_name}</CardTitle>
                 <Badge variant="secondary" className="w-fit mx-auto">
                   {company.sector || 'Sector no especificado'}

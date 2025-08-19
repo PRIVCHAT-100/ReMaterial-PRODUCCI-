@@ -8,5 +8,14 @@
   "confirm": "Confirmar",
   "interface_language": "Idioma de la interfaz",
   "interface_language_desc": "Selecciona el idioma de los textos predeterminados.",
-  "search_placeholder": "¿Qué material buscas? Ej: mármol, acero, textil..."
+  "search_placeholder": "¿Qué material buscas? Ej: mármol, acero, textil...",
+  "ui": {
+    "selecciona-producto-para-filtrar-por-tipo-de-material-sector-usa-los-sectores-que-las-empresas-declaran-en-su-perfil": "Producto: filtra por tipo de material. Sector: usa los sectores del perfil de empresa.",
+    "chips-de-categor-as-scroll-horizontal-en-mobile": "Chips de categorías (scroll horizontal en móvil)",
+    "modo-de-categor-as": "Modo de categorías",
+    "onsearchchange-e-target-value-placeholder-buscar-por-nombre-material-ubicaci-n-classname-pl-10-searchquery": "Buscar por nombre, material o ubicación",
+    "onmodechange-producto-producto": "Producto",
+    "oncategorychange-classname-whitespace-nowrap-todo": "Todo",
+    "onmodechange-sector-sector": "Sector"
+  }
 }

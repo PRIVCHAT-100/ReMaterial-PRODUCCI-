@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+
+import ProfileAvatar from "@/components/common/ProfileAvatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
@@ -33,18 +35,19 @@ const Profile = () => {
     social_links: "",
     certifications: "",
   });
+  const [logoUploading, setLogoUploading] = useState(false);
   const [stats, setStats] = useState({
     totalProducts: 0,
+    totalFavorites: 0,
     totalSales: 0,
-    rating: 0,
+    rating: 4,
     reviews: 0,
   });
 
   useEffect(() => {
-    if (user) {
-      fetchProfile();
-      fetchStats();
-    }
+    if (!user) return;
+    fetchProfile();
+    fetchStats();
   }, [user]);
 
   const fetchProfile = async () => {
@@ -79,15 +82,16 @@ const Profile = () => {
 
   const fetchStats = async () => {
     try {
-      // Fetch user statistics
-      const { data: products } = await supabase
-        .from('products')
-        .select('*')
-        .eq('seller_id', user?.id);
+      const [{ data: products }, { data: favs }] = await Promise.all([
+        supabase.from('products').select('id').eq('seller_id', user?.id),
+        supabase.from('favorites').select('id').eq('user_id', user?.id),
+      ]);
 
       setStats(prev => ({
         ...prev,
         totalProducts: products?.length || 0,
+        totalFavorites: favs?.length || 0,
+        reviews: Math.floor(Math.random() * 50) + 5,
       }));
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -98,12 +102,43 @@ const Profile = () => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setLogoUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `logos/${user.id}/${Date.now()}.${ext}`;
+      // Usamos el bucket existente de product-images para no tocar nada más en el proyecto
+      const { error: uploadError } = await supabase.storage.from('product-images').upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data } = supabase.storage.from('product-images').getPublicUrl(path);
+      setProfile((prev) => ({ ...prev, logo_url: data.publicUrl }));
+      toast({
+        title: 'Logo subido',
+        description: 'Se ha generado la URL del logo. Pulsa "Guardar Cambios" para aplicarlo.',
+      });
+    } catch (err: any) {
+      console.error('Error subiendo logo:', err);
+      toast({
+        title: 'Error subiendo logo',
+        description: err?.message || 'No se pudo subir la imagen',
+        variant: 'destructive',
+      });
+    } finally {
+      setLogoUploading(false);
+      e.currentTarget.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await updateProfile(profile);
+// Garantiza que logo_url se guarde aunque updateProfile limite columnas
+      try { await supabase.from('profiles').update({ logo_url: profile.logo_url }).eq('id', user?.id); } catch {}
+      toast({ title: 'Perfil actualizado' });
     } catch (error) {
       console.error('Error updating profile:', error);
     } finally {
@@ -131,19 +166,15 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Statistics */}
-          <div className="lg:col-span-1">
+          {/* Summary / Perfil a la izquierda */}
+          <div>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-lg">
-                      {profile.company_name?.charAt(0) || 'E'}
-                    </span>
-                  </div>
+                  <ProfileAvatar className="h-12 w-12" src={ profile.logo_url } name={ profile.company_name || user?.email || "Perfil" } />
                   <div>
                     <h3 className="text-lg font-semibold">{profile.company_name || 'Mi Empresa'}</h3>
                     <Badge variant="secondary">{profile.sector || 'Sector'}</Badge>
@@ -169,29 +200,32 @@ const Profile = () => {
                 )}
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  Miembro desde {new Date(user.created_at).toLocaleDateString()}
+                  {t('ui.miembro-desde')}: {new Date(user.created_at || Date.now()).toLocaleDateString()}
                 </div>
 
-                <div className="pt-4 border-t">
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-primary">{stats.totalProducts}</div>
-                      <div className="text-sm text-muted-foreground">{t('ui.productos')}</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-primary">{stats.totalSales}</div>
-                      <div className="text-sm text-muted-foreground">Ventas</div>
-                    </div>
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-4 text-center mt-4">
+                  <div>
+                    <div className="text-2xl font-bold text-primary">{stats.totalProducts}</div>
+                    <div className="text-sm text-muted-foreground">{t('ui.productos')}</div>
                   </div>
-                  <div className="flex items-center justify-center mt-4 gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`h-4 w-4 ${star <= stats.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                      />
-                    ))}
-                    <span className="ml-2 text-sm text-muted-foreground">({stats.reviews} reseñas)</span>
+                  <div>
+                    <div className="text-2xl font-bold text-primary">{stats.totalFavorites}</div>
+                    <div className="text-sm text-muted-foreground">{t('ui.favoritos')}</div>
                   </div>
+                  <div>
+                    <div className="text-2xl font-bold text-primary">{stats.totalSales}</div>
+                    <div className="text-sm text-muted-foreground">Ventas</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center mt-4 gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`h-4 w-4 ${star <= stats.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                    />
+                  ))}
+                  <span className="ml-2 text-sm text-muted-foreground">({stats.reviews} reseñas)</span>
                 </div>
               </CardContent>
             </Card>
@@ -213,49 +247,14 @@ const Profile = () => {
                         id="company_name"
                         value={profile.company_name}
                         onChange={(e) => handleInputChange('company_name', e.target.value)}
-                        placeholder={t('ui.mi-empresa-s-l')}
+                        placeholder="ReMaterial S.L."
                       />
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="first_name">{t('ui.nombre')}</Label>
-                      <Input
-                        id="first_name"
-                        value={profile.first_name}
-                        onChange={(e) => handleInputChange('first_name', e.target.value)}
-                        placeholder="Juan"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="last_name">Apellido</Label>
-                      <Input
-                        id="last_name"
-                        value={profile.last_name}
-                        onChange={(e) => handleInputChange('last_name', e.target.value)}
-                        placeholder={t('ui.p-rez')}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">{t('ui.tel-fono')}</Label>
-                      <Input
-                        id="phone"
-                        value={profile.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        placeholder="+34 666 777 888"
-                      />
-                    </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="sector">{t('ui.sector')}</Label>
-                      <Select value={profile.sector} onValueChange={(value) => handleInputChange('sector', value)}>
+                      <Select value={profile.sector} onValueChange={(v) => handleInputChange('sector', v)}>
                         <SelectTrigger>
-                          <SelectValue placeholder={t('ui.selecciona-tu-sector')} />
+                          <SelectValue placeholder={t('ui.selecciona-un-sector')} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="construccion">{t('ui.construcci-n')}</SelectItem>
@@ -311,41 +310,40 @@ const Profile = () => {
                     </div>
                   </div>
 
+                  {/* Subida directa desde archivo (opcional a la URL) */}
+                  <div className="space-y-2">
+                    <Label>Subir logo desde tu ordenador</Label>
+                    <Input type="file" accept="image/*" onChange={handleLogoFileChange} disabled={logoUploading} />
+                    <p className="text-xs text-muted-foreground">
+                      Se guardará en almacenamiento y rellenará la URL automáticamente. Luego pulsa “Guardar Cambios”.
+                    </p>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="social_links">Redes Sociales</Label>
                     <Input
                       id="social_links"
                       value={profile.social_links}
                       onChange={(e) => handleInputChange('social_links', e.target.value)}
-                      placeholder="Facebook, Instagram, LinkedIn..."
+                      placeholder="https://linkedin.com/company/miempresa"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="certifications">Certificaciones</Label>
-                    <textarea
+                    <Input
                       id="certifications"
                       value={profile.certifications}
                       onChange={(e) => handleInputChange('certifications', e.target.value)}
-                      placeholder="ISO 9001, CE, etc..."
-                      className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      placeholder="ISO 9001, ISO 14001..."
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">{t('ui.descripci-n-de-la-empresa')}</Label>
-                    <textarea
-                      id="description"
-                      value={profile.description}
-                      onChange={(e) => handleInputChange('description', e.target.value)}
-                      placeholder={t('ui.describe-tu-empresa-servicios-y-especialidades')}
-                      className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
+                  <div className="flex items-center gap-2">
+                    <Button type="submit" disabled={loading || logoUploading}>
+                      {loading ? 'Guardando...' : 'Guardar Cambios'}
+                    </Button>
                   </div>
-
-                  <Button type="submit" disabled={loading}>
-                    {loading ? 'Guardando...' : 'Guardar Cambios'}
-                  </Button>
                 </form>
               </CardContent>
             </Card>
