@@ -26,7 +26,8 @@ import Companies from "@/pages/Companies";
 import CompanyProfile from "@/pages/CompanyProfile";
 import Category from "@/pages/Category";
 import Statistics from "@/pages/Statistics";
-import Settings from "@/pages/Settings";
+// ⬇️ Import actualizado: la página de Configuración exporta por defecto "SettingsPage"
+import SettingsPage from "@/pages/Settings/index";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import RepairData from "@/pages/RepairData";
@@ -214,11 +215,12 @@ const App: React.FC = () => {
                 }
               />
 
+              {/* Configuración */}
               <Route
                 path="/settings"
                 element={
                   <PrivateRoute>
-                    <Settings />
+                    <SettingsPage />
                   </PrivateRoute>
                 }
               />
