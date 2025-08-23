@@ -1,7 +1,6 @@
 
 /**
  * src/components/settings/sections/Security.tsx (v2)
- * - 2FA TOTP: enroll -> show QR/secret -> verify -> unenroll
  */
 
 import React, { useEffect, useMemo, useState } from 'react'
@@ -19,11 +18,7 @@ export default function SecuritySection() {
   const [totp, setTotp] = useState<TotpState>({ step: 'idle' })
   const [code, setCode] = useState('')
 
-  async function refreshFactors() {
-    const { totp } = await mfaListFactors()
-    setFactors(totp)
-  }
-
+  async function refreshFactors() { const { totp } = await mfaListFactors(); setFactors(totp) }
   useEffect(() => { refreshFactors() }, [])
 
   const isActive = useMemo(() => factors.some(f => f.status === 'verified' || f.status === 'active'), [factors])
@@ -108,10 +103,7 @@ export default function SecuritySection() {
           </div>
         ) : null}
 
-        <div style={{ marginTop: 16, fontSize: 12, color: '#6B7280' }}>
-          Nota: el registro completo de actividad reciente requiere una tabla de auditoría propia (pendiente).
-        </div>
-
+        <div style={{ marginTop: 16, fontSize: 12, color: '#6B7280' }}>Nota: el registro completo de actividad reciente requiere una tabla de auditoría propia (pendiente).</div>
         {msg ? <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: '#F3F4F6' }}>{msg}</div> : null}
       </section>
     </div>

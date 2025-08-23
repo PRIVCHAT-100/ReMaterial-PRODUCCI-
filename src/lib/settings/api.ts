@@ -1,14 +1,7 @@
 
 /**
  * src/lib/settings/api.ts — ALL settings API in one place.
- * - Supabase client resolution without '@' alias: tries /src/lib/supabase/client.*
- *   and falls back to VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.
- * - Real writes:
- *   • updateAccountBasics(): auth.user_metadata
- *   • getPersonalProfile()/updatePersonalProfile(): profiles table (first_name, last_name, phone, description)
- *   • getCompanyProfile()/updateCompanyProfile(): profiles table (company_name, tax_id, sector, description, website, phone, address, social_links)
- * - Safe stubs (shapes that UI expects) for: appearance, billing, integrations, notifications,
- *   preferences, privacy, legal.
+ * (Same as previous comprehensive version, kept for completeness.)
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -27,13 +20,8 @@ function getEnv(name: string): string | undefined {
   }
 }
 
-/**
- * Try to load an existing project Supabase client without triggering
- * Vite's resolver on a missing alias. Works on Vite/Vercel.
- */
 function tryLoadProjectClientEager(): SupabaseClient | null {
   const mods = {
-    // Absolute-from-root forms
     ...import.meta.glob('/src/lib/supabase/client.ts', { eager: true }),
     ...import.meta.glob('/src/lib/supabase/client.tsx', { eager: true }),
     ...import.meta.glob('/src/lib/supabase/client.js', { eager: true }),
@@ -42,7 +30,6 @@ function tryLoadProjectClientEager(): SupabaseClient | null {
     ...import.meta.glob('/src/lib/supabase/client/index.tsx', { eager: true }),
     ...import.meta.glob('/src/lib/supabase/client/index.js', { eager: true }),
     ...import.meta.glob('/src/lib/supabase/client/index.jsx', { eager: true }),
-    // Relative forms (some setups prefer these at build time)
     ...import.meta.glob('src/lib/supabase/client.ts', { eager: true }),
     ...import.meta.glob('src/lib/supabase/client.tsx', { eager: true }),
     ...import.meta.glob('src/lib/supabase/client.js', { eager: true }),
@@ -52,7 +39,6 @@ function tryLoadProjectClientEager(): SupabaseClient | null {
     ...import.meta.glob('src/lib/supabase/client/index.js', { eager: true }),
     ...import.meta.glob('src/lib/supabase/client/index.jsx', { eager: true }),
   } as Record<string, any>
-
   const first = Object.values(mods)[0] as any
   if (!first) return null
   const candidate: any = first?.supabase ?? first?.default ?? first?.client ?? null
@@ -63,9 +49,7 @@ function tryEnvClient(): SupabaseClient | null {
   const url = getEnv('VITE_SUPABASE_URL')
   const key = getEnv('VITE_SUPABASE_ANON_KEY')
   if (!url || !key) return null
-  return createSbClient(url, key, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-  })
+  return createSbClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
 }
 
 async function getClient(): Promise<SupabaseClient> {
@@ -77,14 +61,7 @@ async function getClient(): Promise<SupabaseClient> {
   throw new Error('[settings/api] No se pudo inicializar Supabase (falta cliente y/o env).')
 }
 
-// =========== Account basics (auth) ===========
-
-export type AccountBasics = {
-  email: string | null
-  emailVerified: boolean
-  name: string | null
-  avatar: string | null
-}
+export type AccountBasics = { email: string | null; emailVerified: boolean; name: string | null; avatar: string | null }
 
 export async function getAccountBasics(): Promise<AccountBasics> {
   try {
@@ -112,9 +89,7 @@ export async function updateAccountBasics(input: { name?: string; avatar?: strin
     const { error } = await supabase.auth.updateUser({ data: meta })
     if (error) return { ok: false, message: error.message }
     return { ok: true }
-  } catch (e: any) {
-    return { ok: false, message: e?.message ?? 'No se pudo guardar.' }
-  }
+  } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudo guardar.' } }
 }
 
 export async function changeAuth(input: { newEmail?: string; newPassword?: string }): Promise<{ ok: boolean; message?: string }> {
@@ -127,22 +102,16 @@ export async function changeAuth(input: { newEmail?: string; newPassword?: strin
     const { error } = await supabase.auth.updateUser(payload)
     if (error) return { ok: false, message: error.message }
     return { ok: true }
-  } catch (e: any) {
-    return { ok: false, message: e?.message ?? 'No se pudo actualizar el usuario.' }
-  }
+  } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudo actualizar el usuario.' } }
 }
-
-// =========== Sessions ===========
 
 export type SessionInfo = { ip?: string; device?: string; current: boolean; expiresAt?: string }
 
 async function fetchPublicIP(timeoutMs = 4000): Promise<string | undefined> {
   try {
-    const controller = new AbortController()
-    const to = setTimeout(() => controller.abort(), timeoutMs)
+    const controller = new AbortController(); const to = setTimeout(() => controller.abort(), timeoutMs)
     const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal })
-    clearTimeout(to)
-    if (!res.ok) return undefined
+    clearTimeout(to); if (!res.ok) return undefined
     const data = await res.json().catch(() => ({}))
     return typeof data?.ip === 'string' ? data.ip : undefined
   } catch { return undefined }
@@ -170,13 +139,11 @@ export async function revokeAllSessions(): Promise<{ ok: boolean; message?: stri
   } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudieron cerrar las sesiones.' } }
 }
 
-// =========== Locale / Preferences (general) ===========
 export async function getLocalePrefs(): Promise<{ locale?: string; currency?: string; tz?: string }> { return {} }
 export async function updateLocalePrefs(_: { locale?: string; currency?: string; tz?: string }): Promise<{ ok: false; message: string }> {
   return { ok: false, message: 'updateLocalePrefs() aún no está implementada.' }
 }
 
-// =========== MFA (2FA TOTP) ===========
 export type TotpEnrollResult = { factorId: string; qrSvg?: string; secret?: string; uri?: string }
 
 export async function mfaListFactors(): Promise<{ totp: Array<{ id: string; status: string }>; defaultFactorId?: string }> {
@@ -221,18 +188,12 @@ export async function mfaUnenroll(factorId: string): Promise<{ ok: boolean; mess
   } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudo desactivar el 2FA.' } }
 }
 
-// =========== Personal profile (profiles table) ===========
-
 export async function getPersonalProfile() {
   try {
     const supabase = await getClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) throw userError
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('first_name, last_name, phone, description')
-      .eq('id', user.id)
-      .single()
+    const { data, error } = await supabase.from('profiles').select('first_name, last_name, phone, description').eq('id', user.id).single()
     if (error) throw error
     return data ?? { first_name: '', last_name: '', phone: '', description: '' }
   } catch {
@@ -250,8 +211,6 @@ export async function updatePersonalProfile(values: { first_name?: string; last_
     return { ok: true }
   } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudo guardar el perfil personal.' } }
 }
-
-// =========== Company profile (profiles table) ===========
 
 export async function getCompanyProfile() {
   try {
@@ -290,7 +249,6 @@ export async function updateCompanyProfile(values: {
     const supabase = await getClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) throw userError
-    // Map UI fields -> table columns that exist
     const payload: any = {}
     if (values.legalName || values.tradeName) payload.company_name = values.legalName || values.tradeName
     if (values.taxId !== undefined) payload.tax_id = values.taxId
@@ -306,8 +264,6 @@ export async function updateCompanyProfile(values: {
   } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudo guardar el perfil de empresa.' } }
 }
 
-// =========== Notifications ===========
-
 export type NotificationPrefs = {
   types: Record<string, boolean>
   channels: { email: boolean; sms: boolean; push: boolean }
@@ -316,88 +272,27 @@ export type NotificationPrefs = {
 }
 
 export async function getNotificationPrefs(): Promise<NotificationPrefs> {
-  return {
-    types: { product: true, security: true, marketing: false },
-    channels: { email: true, sms: false, push: false },
-    frequency: 'realtime',
-    weeklyDigest: 'monday',
-  }
+  return { types: { product: true, security: true, marketing: false }, channels: { email: true, sms: false, push: false }, frequency: 'realtime', weeklyDigest: 'monday' }
 }
-export async function updateNotificationPrefs(_: NotificationPrefs): Promise<{ ok: boolean; message?: string }> {
-  return { ok: true }
-}
+export async function updateNotificationPrefs(_: NotificationPrefs): Promise<{ ok: boolean; message?: string }> { return { ok: true } }
 
-// =========== Appearance ===========
+export async function getAppearance() { return { theme: 'system', fontScale: 100, highContrast: false, reduceMotion: false, tableDensity: 'comfortable' } }
+export async function updateAppearance(_: any): Promise<{ ok: boolean; message?: string }> { return { ok: true } }
 
-export async function getAppearance() {
-  return { theme: 'system', fontScale: 100, highContrast: false, reduceMotion: false, tableDensity: 'comfortable' }
-}
-export async function updateAppearance(_: any): Promise<{ ok: boolean; message?: string }> {
-  return { ok: true }
-}
+export async function getPreferences() { return { language: 'es', fallbackLanguage: 'en', defaultUnit: 'unidad', minStockDefault: 0, shippingAvailableDefault: true, templates: { offer: '', invoice: '' } } }
+export async function updatePreferences(_: any): Promise<{ ok: boolean; message?: string }> { return { ok: true } }
 
-// =========== Preferences (business defaults) ===========
+export async function getPrivacyPrefs() { return { lastSeenVisible: true, analyticsConsent: true, cookiesConsent: true, contactPolicy: 'all' } }
+export async function updatePrivacyPrefs(_: any): Promise<{ ok: boolean; message?: string }> { return { ok: true } }
 
-export async function getPreferences() {
-  return {
-    language: 'es',
-    fallbackLanguage: 'en',
-    defaultUnit: 'unidad',
-    minStockDefault: 0,
-    shippingAvailableDefault: true,
-    templates: { offer: '', invoice: '' },
-  }
-}
-export async function updatePreferences(_: any): Promise<{ ok: boolean; message?: string }> {
-  return { ok: true }
-}
+export async function getBillingProfile() { return { legalName: '', taxId: '', billingAddress: '', vatPreference: 'included', euVatNumber: '' } }
+export async function updateBillingProfile(_: any): Promise<{ ok: boolean; message?: string }> { return { ok: true } }
+export async function getPaymentMethods() { return [{ id: 'pm_1', brand: 'visa', last4: '4242', expMonth: 12, expYear: 2030 }] }
 
-// =========== Privacy ===========
-
-export async function getPrivacyPrefs() {
-  return { lastSeenVisible: true, analyticsConsent: true, cookiesConsent: true, contactPolicy: 'all' }
-}
-export async function updatePrivacyPrefs(_: any): Promise<{ ok: boolean; message?: string }> {
-  return { ok: true }
-}
-
-// =========== Billing (stubs) ===========
-
-export async function getBillingProfile() {
-  return { legalName: '', taxId: '', billingAddress: '', vatPreference: 'included', euVatNumber: '' }
-}
-export async function updateBillingProfile(_: any): Promise<{ ok: boolean; message?: string }> {
-  return { ok: true }
-}
-export async function getPaymentMethods() {
-  return [
-    { id: 'pm_1', brand: 'visa', last4: '4242', expMonth: 12, expYear: 2030 },
-    { id: 'pm_2', brand: 'mastercard', last4: '4444', expMonth: 10, expYear: 2029 },
-  ]
-}
-
-// =========== Integrations (stubs) ===========
-
-export async function getIntegrations() {
-  return {
-    webhooks: [
-    ],
-    apiKeys: [
-      { id: 'key_1', name: 'default', scopes: ['read', 'write'] },
-    ],
-  }
-}
-export async function createWebhook(_: { url: string; events: string[] }) {
-  return { id: 'wh_' + Math.random().toString(36).slice(2), url: _.url, events: _.events }
-}
+export async function getIntegrations() { return { webhooks: [], apiKeys: [{ id: 'key_1', name: 'default', scopes: ['read', 'write'] }] } }
+export async function createWebhook(_: { url: string; events: string[] }) { return { id: 'wh_' + Math.random().toString(36).slice(2), url: _.url, events: _.events } }
 export async function deleteWebhook(_: string) { return { ok: true } }
-export async function createApiKey(_: { name?: string; scopes?: string[] }) {
-  return { id: 'key_' + Math.random().toString(36).slice(2), name: _.name ?? 'new', scopes: _.scopes ?? ['read'], key: 'sk_' + Math.random().toString(36).slice(2) }
-}
+export async function createApiKey(_: { name?: string; scopes?: string[] }) { return { id: 'key_' + Math.random().toString(36).slice(2), name: _.name ?? 'new', scopes: _.scopes ?? ['read'], key: 'sk_' + Math.random().toString(36).slice(2) } }
 export async function revokeApiKey(_: string) { return { ok: true } }
 
-// =========== Legal Meta (stubs) ===========
-
-export async function getLegalMeta() {
-  return { termsVersionAccepted: '1.0', privacyVersionAccepted: '1.0', acceptedAt: new Date().toISOString() }
-}
+export async function getLegalMeta() { return { termsVersionAccepted: '1.0', privacyVersionAccepted: '1.0', acceptedAt: new Date().toISOString() } }

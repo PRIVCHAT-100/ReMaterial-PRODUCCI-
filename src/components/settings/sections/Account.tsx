@@ -1,10 +1,6 @@
 
 /**
- * src/components/settings/sections/Account.tsx (v3)
- * - Reads getAccountBasics() and getSessions() on mount
- * - Shows name/email/avatar; change email/password; save name/avatar
- * - Table of current session
- * - "Cerrar todas" => revokeAllSessions()
+ * src/components/settings/sections/Account.tsx (v3 - syntax fix)
  */
 
 import React, { useEffect, useMemo, useState } from 'react'
@@ -18,12 +14,7 @@ import {
   type SessionInfo,
 } from '@/lib/settings/api'
 
-type BusyState = {
-  saveBasics?: boolean
-  changeEmail?: boolean
-  changePassword?: boolean
-  revokeAll?: boolean
-}
+type BusyState = { saveBasics?: boolean; changeEmail?: boolean; changePassword?: boolean; revokeAll?: boolean }
 
 export default function AccountSection() {
   const [basics, setBasics] = useState<AccountBasics | null>(null)
@@ -37,10 +28,7 @@ export default function AccountSection() {
 
   async function loadAll() {
     const [b, s] = await Promise.all([getAccountBasics(), getSessions()])
-    setBasics(b)
-    setName(b.name ?? '')
-    setAvatar(b.avatar ?? '')
-    setSessions(s)
+    setBasics(b); setName(b.name ?? ''); setAvatar(b.avatar ?? ''); setSessions(s)
   }
 
   useEffect(() => {
@@ -51,7 +39,7 @@ export default function AccountSection() {
         if (!mounted) return
         setMessage(e?.message ?? 'No se pudo cargar la cuenta. Revisa configuración de Supabase.')
         setBasics({ email: null, emailVerified: false, name: null, avatar: null })
-        setSessions([{ current: true }])
+        setSessions([{ current: true } as SessionInfo])
       }
     })()
     return () => { mounted = false }
@@ -163,7 +151,11 @@ export default function AccountSection() {
               <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••"
                 style={{ padding: '8px 10px', border: '1px solid #D1D5DB', borderRadius: 8 }} />
             </label>
-            <button onClick={onChangePassword} disabled={!newPassword || !!busy.changePassword} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid '#111827'" }}>
+            <button
+              onClick={onChangePassword}
+              disabled={!newPassword || !!busy.changePassword}
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #111827' }}
+            >
               {busy.changePassword ? 'Actualizando…' : 'Cambiar contraseña'}
             </button>
           </div>
