@@ -26,7 +26,6 @@ import Companies from "@/pages/Companies";
 import CompanyProfile from "@/pages/CompanyProfile";
 import Category from "@/pages/Category";
 import Statistics from "@/pages/Statistics";
-// ⬇️ Import actualizado: la página de Configuración exporta por defecto "SettingsPage"
 import SettingsPage from "@/pages/Settings/index";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
@@ -85,6 +84,10 @@ const App: React.FC = () => {
               {/* Públicas */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+
+              {/* 🚑 Alias para "explorar" productos usados por Favoritos/botones */}
+              <Route path="/explore" element={<Index />} />
+              <Route path="/explorar" element={<Index />} />
 
               {/* Públicas: detalle de producto */}
               <Route path="/products/:id" element={<ProductDetail />} />

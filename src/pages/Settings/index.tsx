@@ -1,4 +1,7 @@
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import React, { Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Account = React.lazy(() => import("@/components/settings/sections/Account"));
 const Security = React.lazy(() => import("@/components/settings/sections/Security"));
@@ -11,6 +14,19 @@ const Preferences = React.lazy(() => import("@/components/settings/sections/Pref
 const Integrations = React.lazy(() => import("@/components/settings/sections/Integrations"));
 const Appearance = React.lazy(() => import("@/components/settings/sections/Appearance"));
 const SupportLegal = React.lazy(() => import("@/components/settings/sections/SupportLegal"));
+
+/**
+ * Si tu app usa un layout con Header (p. ej. <DashboardLayout/>),
+ * puedes envolver aquí el contenido con ese layout:
+ *
+ *   return (
+ *     <DashboardLayout title="Configuración">
+ *        ...contenido...
+ *     </DashboardLayout>
+ *   )
+ *
+ * De momento usamos un contenedor centrado para que encaje visualmente.
+ */
 
 const tabs = [
   { key: "account", label: "Cuenta", Component: Account },
@@ -27,13 +43,19 @@ const tabs = [
 ];
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const [active, setActive] = React.useState(tabs[0].key);
   const Active = tabs.find(t => t.key === active)!.Component;
   return (
-    <div className="container mx-auto p-4 md:p-6">
-      <h1 className="text-2xl font-bold mb-4">Configuración</h1>
+    <>
+      <Header />
+      <div className="max-w-6xl mx-auto p-4 md:p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl md:text-4xl font-semibold">Configuración</h1>
+        <button onClick={() => navigate(-1)} className="px-3 py-1.5 rounded-xl border">Volver</button>
+      </div>
       <div className="flex flex-col md:flex-row gap-4">
-        <aside className="md:w-64">
+        <aside className="md:w-60">
           <nav className="rounded-2xl border bg-white dark:bg-zinc-900 p-2">
             {tabs.map(t => (
               <button
@@ -53,5 +75,7 @@ export default function SettingsPage() {
         </main>
       </div>
     </div>
+      <Footer />
+    </>
   );
 }
