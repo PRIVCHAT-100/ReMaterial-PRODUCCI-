@@ -1,7 +1,6 @@
 
 /**
- * src/lib/settings/api.ts — ALL settings API in one place.
- * (Same as previous comprehensive version, kept for completeness.)
+ * src/lib/settings/api.ts — fixed Vite glob (only absolute '/src/...')
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -20,6 +19,7 @@ function getEnv(name: string): string | undefined {
   }
 }
 
+// Only absolute-from-root globs (valid in Vite build)
 function tryLoadProjectClientEager(): SupabaseClient | null {
   const mods = {
     ...import.meta.glob('/src/lib/supabase/client.ts', { eager: true }),
@@ -30,15 +30,8 @@ function tryLoadProjectClientEager(): SupabaseClient | null {
     ...import.meta.glob('/src/lib/supabase/client/index.tsx', { eager: true }),
     ...import.meta.glob('/src/lib/supabase/client/index.js', { eager: true }),
     ...import.meta.glob('/src/lib/supabase/client/index.jsx', { eager: true }),
-    ...import.meta.glob('src/lib/supabase/client.ts', { eager: true }),
-    ...import.meta.glob('src/lib/supabase/client.tsx', { eager: true }),
-    ...import.meta.glob('src/lib/supabase/client.js', { eager: true }),
-    ...import.meta.glob('src/lib/supabase/client.jsx', { eager: true }),
-    ...import.meta.glob('src/lib/supabase/client/index.ts', { eager: true }),
-    ...import.meta.glob('src/lib/supabase/client/index.tsx', { eager: true }),
-    ...import.meta.glob('src/lib/supabase/client/index.js', { eager: true }),
-    ...import.meta.glob('src/lib/supabase/client/index.jsx', { eager: true }),
   } as Record<string, any>
+
   const first = Object.values(mods)[0] as any
   if (!first) return null
   const candidate: any = first?.supabase ?? first?.default ?? first?.client ?? null
@@ -60,6 +53,8 @@ async function getClient(): Promise<SupabaseClient> {
   if (fromEnv) { _client = fromEnv; return _client }
   throw new Error('[settings/api] No se pudo inicializar Supabase (falta cliente y/o env).')
 }
+
+// ===== Account basics =====
 
 export type AccountBasics = { email: string | null; emailVerified: boolean; name: string | null; avatar: string | null }
 
@@ -105,6 +100,8 @@ export async function changeAuth(input: { newEmail?: string; newPassword?: strin
   } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudo actualizar el usuario.' } }
 }
 
+// ===== Sessions =====
+
 export type SessionInfo = { ip?: string; device?: string; current: boolean; expiresAt?: string }
 
 async function fetchPublicIP(timeoutMs = 4000): Promise<string | undefined> {
@@ -139,11 +136,13 @@ export async function revokeAllSessions(): Promise<{ ok: boolean; message?: stri
   } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudieron cerrar las sesiones.' } }
 }
 
+// ===== Locale =====
 export async function getLocalePrefs(): Promise<{ locale?: string; currency?: string; tz?: string }> { return {} }
 export async function updateLocalePrefs(_: { locale?: string; currency?: string; tz?: string }): Promise<{ ok: false; message: string }> {
   return { ok: false, message: 'updateLocalePrefs() aún no está implementada.' }
 }
 
+// ===== MFA =====
 export type TotpEnrollResult = { factorId: string; qrSvg?: string; secret?: string; uri?: string }
 
 export async function mfaListFactors(): Promise<{ totp: Array<{ id: string; status: string }>; defaultFactorId?: string }> {
@@ -188,6 +187,7 @@ export async function mfaUnenroll(factorId: string): Promise<{ ok: boolean; mess
   } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudo desactivar el 2FA.' } }
 }
 
+// ===== Profiles: personal =====
 export async function getPersonalProfile() {
   try {
     const supabase = await getClient()
@@ -212,6 +212,7 @@ export async function updatePersonalProfile(values: { first_name?: string; last_
   } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudo guardar el perfil personal.' } }
 }
 
+// ===== Profiles: company =====
 export async function getCompanyProfile() {
   try {
     const supabase = await getClient()
@@ -264,13 +265,13 @@ export async function updateCompanyProfile(values: {
   } catch (e: any) { return { ok: false, message: e?.message ?? 'No se pudo guardar el perfil de empresa.' } }
 }
 
+// ===== Stubs to avoid import errors =====
 export type NotificationPrefs = {
   types: Record<string, boolean>
   channels: { email: boolean; sms: boolean; push: boolean }
   frequency: 'realtime' | 'daily' | 'weekly'
   weeklyDigest?: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
 }
-
 export async function getNotificationPrefs(): Promise<NotificationPrefs> {
   return { types: { product: true, security: true, marketing: false }, channels: { email: true, sms: false, push: false }, frequency: 'realtime', weeklyDigest: 'monday' }
 }
