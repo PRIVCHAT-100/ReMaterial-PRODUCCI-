@@ -34,6 +34,10 @@ import PaymentSuccess from "@/pages/PaymentSuccess";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useTranslation } from "react-i18next";
 
+// ✅ NUEVO: páginas públicas de ayuda
+import HelpCenter from "@/pages/HelpCenter";
+import HowItWorks from "@/pages/HowItWorks";
+
 const queryClient = new QueryClient();
 const maintenance = import.meta.env.VITE_MAINTENANCE === 'true';
 
@@ -93,6 +97,10 @@ const App: React.FC = () => {
               <Route path="/products/:id" element={<ProductDetail />} />
               {/* ➕ ALIAS nuevo para tu error reportado */}
               <Route path="/product/:id" element={<ProductDetail />} />
+
+              {/* ✅ NUEVO: páginas públicas de ayuda */}
+              <Route path="/help" element={<HelpCenter />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
 
               {/* Legales / públicas */}
               <Route path="/privacy" element={<Privacy />} />

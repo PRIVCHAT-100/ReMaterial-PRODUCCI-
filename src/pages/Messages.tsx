@@ -32,6 +32,19 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
+
+  // 🔄 Instantáneo: escucha cambios locales de estado de oferta para reflejar aceptación/rechazo al instante (optimista)
+  useEffect(() => {
+    const handler = (e: any) => {
+      const { id, status } = e.detail || {};
+      if (!id || !status) return;
+      setOffers(prev => prev.map(o => (o.id === id ? { ...o, status } : o)));
+    };
+    window.addEventListener('offer-status-updated', handler as any);
+    return () => window.removeEventListener('offer-status-updated', handler as any);
+  }, []);
+
+
   const [activeTab, setActiveTab] = useState<"product" | "general" | "archived">("product");
   const [searchQuery, setSearchQuery] = useState("");
   const [unreadTotals, setUnreadTotals] = useState({ productTotal: 0, generalTotal: 0 });

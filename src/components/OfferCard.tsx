@@ -48,26 +48,20 @@ export default function OfferCard({ offer }: { offer: Offer }) {
 
     try {
       setSubmitting(next);
+      // Optimistic UI: update immediately
+      window.dispatchEvent(new CustomEvent('offer-status-updated', { detail: { id: offer.id, status: next } }));
       const { error } = await supabase
         .from('offers')
         .update({ status: next })
         .eq('id', offer.id);
-
       if (error) {
+        // rollback optimistic
+        window.dispatchEvent(new CustomEvent('offer-status-updated', { detail: { id: offer.id, status: offer.status } }));
         toast({ title: 'Error', description: error.message, variant: 'destructive' });
         return;
       }
 
-      // Mensaje de sistema a la conversación
-      if (offer.conversation_id && user) {
-        const text = next === 'accepted' ? 'Oferta aceptada' : next === 'rejected' ? 'Oferta rechazada' : 'Oferta cancelada';
-        await supabase.from('messages').insert({
-          conversation_id: offer.conversation_id,
-          sender_id: user.id,
-          content: `${text} (#${offer.id})`,
-        });
-      }
-
+            window.dispatchEvent(new CustomEvent('offer-status-updated', { detail: { id: offer.id, status: next } }));
       toast({ title: 'Actualizado', description: `Estado: ${next}` });
     } catch (e: any) {
       toast({ title: 'Error', description: e?.message || "No se pudo actualizar la oferta", variant: 'destructive' });
@@ -84,31 +78,33 @@ export default function OfferCard({ offer }: { offer: Offer }) {
     try {
       setSubmitting('reserve');
 
-      const { error } = await supabase
-        .from('products')
-        .update({
+      // Permitir decidir si guardar el precio ofrecido como precio reservado
+      const keepPrice = confirm('¿Quieres guardar el precio ofrecido como PRECIO RESERVADO en el producto? (Aceptar = sí, Cancelar = no)');
+
+      const updatePayload: any = {
           reserved: true,
           reserved_by: offer.buyer_id,
-          reserved_price: offer.offered_price,
           updated_at: new Date().toISOString(),
-        })
+      };
+      if (keepPrice) {
+          updatePayload.reserved_price = offer.offered_price;
+      } else {
+          updatePayload.reserved_price = null; // deja el campo vacío
+      }
+
+      const { error } = await supabase
+        .from('products')
+        .update(updatePayload)
         .eq('id', offer.product_id);
 
       if (error) {
+        // rollback optimistic
+        window.dispatchEvent(new CustomEvent('offer-status-updated', { detail: { id: offer.id, status: offer.status } }));
         toast({ title: 'Error', description: error.message, variant: 'destructive' });
         return;
       }
 
-      // Mensaje de sistema para dejar constancia
-      if (offer.conversation_id && user) {
-        await supabase.from('messages').insert({
-          conversation_id: offer.conversation_id,
-          sender_id: user.id,
-          content: `Producto marcado como RESERVADO para el comprador (oferta #${offer.id}) por ${fmtEUR(offer.offered_price)}.`,
-        });
-      }
-
-      toast({ title: 'Reservado', description: 'El producto ha sido marcado como RESERVADO.' });
+            toast({ title: 'Reservado', description: 'El producto ha sido marcado como RESERVADO.' });
     } catch (e: any) {
       toast({ title: 'Error', description: e?.message || "No se pudo reservar el producto", variant: 'destructive' });
     } finally {

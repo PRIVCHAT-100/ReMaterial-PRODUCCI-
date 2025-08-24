@@ -49,6 +49,19 @@ const ProductDetail = () => {
     }
   }, [id, user]);
 
+// 🔄 Realtime: reflejar cambios de reserva sin recargar
+useEffect(() => {
+  if (!id) return;
+  const channel = supabase
+    .channel(`product-${id}`)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products', filter: `id=eq.${id}` }, (payload) => {
+      setProduct((prev: any) => (prev && prev.id === payload.new.id) ? { ...prev, ...payload.new } : prev);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, [id]);
+
+
   const fetchProduct = async () => {
     try {
       const { data: productData, error: productError } = await supabase
@@ -410,7 +423,8 @@ const ProductDetail = () => {
                 Contactar Vendedor
               </Button>
 
-              <Button 
+              {!(product?.reserved && user?.id !== product?.seller_id) && (
+<Button 
                 variant="outline"
                 className="w-full"
                 type="button"
@@ -424,8 +438,14 @@ const ProductDetail = () => {
               >
                 💬 Hacer contraoferta
               </Button>
+)}
+{product?.reserved && user?.id !== product?.seller_id && (
+  <div className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+    Este producto está reservado y no está disponible para compra o contraoferta en este momento.
+  </div>
+)}
 
-              {product.allow_direct_purchase && (
+              {product.allow_direct_purchase && !(product?.reserved && user?.id !== product?.seller_id) && (
                 <Button 
                   variant="outline" 
                   className="w-full"
