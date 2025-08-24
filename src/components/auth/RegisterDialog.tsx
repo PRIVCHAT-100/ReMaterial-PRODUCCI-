@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import GeoConsentAfterSignup from "@/components/auth/GeoConsentAfterSignup";
 
 interface RegisterDialogProps {
   open: boolean;
@@ -36,6 +37,8 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
   });
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
+
+  const [geoPromptOpen, setGeoPromptOpen] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -63,6 +66,7 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
       
       await signUp(formData.email, formData.password, userData);
       onOpenChange(false);
+      setGeoPromptOpen(true);
       setFormData({
         email: "",
         password: "",
@@ -225,5 +229,6 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
         </form>
       </DialogContent>
     </Dialog>
+      <GeoConsentAfterSignup open={geoPromptOpen} onOpenChange={setGeoPromptOpen} />
   );
 };

@@ -9,11 +9,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Building, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import GeoConsentAfterSignup from "@/components/auth/GeoConsentAfterSignup";
 
 const Auth = () => {
   const { t } = useTranslation();
 
   const navigate = useNavigate();
+  const [geoOpen, setGeoOpen] = useState(false);
   const { signUp, signIn } = useAuth();
   const [loading, setLoading] = useState(false);
 
@@ -104,7 +106,7 @@ const Auth = () => {
       };
 
       await signUp(registerData.email, registerData.password, userData);
-      navigate("/");
+      setGeoOpen(true);
     } catch (error) {
       console.error("Error signing up:", error);
     } finally {
@@ -319,6 +321,7 @@ const Auth = () => {
           <p>{t('ui.al-registrarte-aceptas-nuestros-t-rminos-de-servic')}</p>
         </div>
       </div>
+      <GeoConsentAfterSignup open={geoOpen} onOpenChange={setGeoOpen} onDecide={() => { setGeoOpen(false); navigate("/"); }} />
     </div>
   );
 };

@@ -45,6 +45,8 @@ interface Product {
   reserved?: boolean;
   reserved_price?: number | null;
   shipping_available?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 const SECTOR_TO_CATEGORIES: Record<string, string[]> = {
@@ -84,12 +86,28 @@ const ProductGrid = ({
     unit: "",
     quantityMin: "",
     quantityMax: "",
+    distanceKm: "",
     listedWithin: "any",
     withImage: false,
     shippingAvailable: false,
   });
 
   const { user } = useAuth();
+
+// Coordenadas del usuario desde localStorage (consentimiento post-registro)
+const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+useEffect(() => {
+  try {
+    const raw = localStorage.getItem('user_coords_v1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.lat === 'number' && typeof parsed.lng === 'number') {
+        setUserCoords({ lat: parsed.lat, lng: parsed.lng });
+      }
+    }
+  } catch {}
+}, []);
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -266,6 +284,17 @@ const ProductGrid = ({
   const filteredProducts = useMemo(() => {
     let filtered = products;
 
+    function haversineKm(lat1:number, lon1:number, lat2:number, lon2:number) {
+      const R = 6371;
+      const toRad = (d:number) => d * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+
     if (selectedCategory !== "all") {
       const legacyMap: Record<string, string> = {
         construction: "construccion",
@@ -339,6 +368,14 @@ const ProductGrid = ({
       if (filters.withImage && !p.images?.[0]) return false;
       if (filters.shippingAvailable && !p.shipping_available) return false;
 
+      // Distancia: si hay km y coords de usuario, exigimos que el producto tenga coords y esté dentro del radio
+      const km = Number(filters.distanceKm);
+      if (!isNaN(km) && km > 0 && userCoords) {
+        if (p.latitude == null || p.longitude == null) return false;
+        const d = haversineKm(userCoords.lat, userCoords.lng, Number(p.latitude), Number(p.longitude));
+        if (d > km) return false;
+      }
+
       return true;
     });
 
@@ -379,6 +416,7 @@ const ProductGrid = ({
       unit: "",
       quantityMin: "",
       quantityMax: "",
+      distanceKm: "",
       listedWithin: "any",
       withImage: false,
       shippingAvailable: false,
