@@ -1,12 +1,13 @@
-
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useA11yAppearance } from "../hooks/useA11yAppearance";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";  // ✅ añadido
 
 export default function AccessibilityAppearanceSection() {
   const { prefs, setPrefs, save, loading, saving } = useA11yAppearance();
   const disabled = loading || saving;
+  const { toast } = useToast(); // ✅ añadido
 
   return (
     <div className="space-y-6">
@@ -74,7 +75,18 @@ export default function AccessibilityAppearanceSection() {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={() => save(prefs)} disabled={disabled}>{saving ? "Guardando..." : "Guardar cambios"}</Button>
+        <Button
+          onClick={async () => {
+            await save(prefs);
+            toast({
+              title: "Preferencias guardadas",
+              description: "Tus cambios de accesibilidad y apariencia se han aplicado correctamente.",
+            });
+          }}
+          disabled={disabled}
+        >
+          {saving ? "Guardando..." : "Guardar cambios"}
+        </Button>
       </div>
     </div>
   );

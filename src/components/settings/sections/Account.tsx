@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
  * - Export data (JSON) for GDPR
  *
  * NO external features modified. Only touches Supabase auth user_metadata.
+ * (ACTUALIZACIÓN mínima: también sincroniza profiles.display_name)
  */
 
 type UserMeta = Record<string, any>;
@@ -66,6 +67,19 @@ export default function Account() {
           dateFmt: p.dateFmt ?? "dd/mm/yyyy",
           currency: p.currency ?? "EUR",
         });
+
+        // **Añadido mínimo**: si no había nombre en user_metadata,
+        // intenta leer el display_name desde profiles (id = user.id)
+        if (!metaName && user?.id) {
+          const { data: prof, error: profErr } = await supabase
+            .from("profiles")
+            .select("display_name")
+            .eq("id", user.id)
+            .maybeSingle();
+          if (!profErr && prof?.display_name) {
+            setName(prof.display_name);
+          }
+        }
       } catch (e: any) {
         console.error(e);
         toast({ title: "Error cargando cuenta", description: e?.message ?? "No se pudo cargar la cuenta.", variant: "destructive" });
@@ -78,12 +92,27 @@ export default function Account() {
 
   const saveBasics = async () => {
     try {
+      // 1) Actualiza user_metadata (como ya hacía)
       const meta: UserMeta = {};
       if (name) meta.full_name = name, meta.name = name;
       if (avatar) meta.avatar_url = avatar, meta.picture = avatar;
-      const { error } = await supabase.auth.updateUser({ data: meta });
-      if (error) throw error;
+      const { error: metaErr } = await supabase.auth.updateUser({ data: meta });
+      if (metaErr) throw metaErr;
+
+      // 2) **Añadido mínimo**: sincroniza también en profiles.display_name
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr) throw userErr;
+      if (user?.id && name) {
+        const { error: profErr } = await supabase
+          .from("profiles")
+          .update({ display_name: name })
+          .eq("id", user.id);
+        if (profErr) throw profErr;
+      }
+
       toast({ title: "Datos guardados", description: "Nombre y avatar actualizados." });
+      // Opcional: si tu Header usa caché, emite un evento para re-cargar
+      window.dispatchEvent(new Event("profile:updated"));
     } catch (e: any) {
       console.error(e);
       toast({ title: "No se pudo guardar", description: e?.message ?? "", variant: "destructive" });
@@ -211,12 +240,14 @@ export default function Account() {
         </div>
       </FormSection>
 
-      <FormSection title="Cambiar email" description="Enviaremos un correo de verificación al nuevo email.">
+      <div data-ff="settings.account.change_email">
+<FormSection title="Cambiar email" description="Enviaremos un correo de verificación al nuevo email.">
         <div className="flex gap-2">
           <Input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="nuevo@email.com" className="max-w-md" />
           <Button onClick={changeEmail}>Actualizar</Button>
         </div>
       </FormSection>
+</div>
 
       <FormSection title="Cambiar contraseña" description="Por seguridad, te pediremos iniciar sesión de nuevo si es necesario.">
         <div className="grid md:grid-cols-2 gap-3">

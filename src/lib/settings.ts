@@ -1,11 +1,10 @@
-// Settings API with default export as function `save` (for compatibility).
-// Also provides named exports { save, getAppearance, bootAppearance }.
-//
-// Works with any of these:
-//   import save from "@/lib/settings";           save(...)
-//   import { save } from "@/lib/settings";       save(...)
-//   import save from "@/lib/settings/api";       save(...)
-//   import { save } from "@/lib/settings/api";   save(...)
+// Unified A11y + Appearance settings API (drop-in, non-breaking).
+// Works with ANY of these imports:
+//   import { save } from "@/lib/settings";
+//   import { save } from "@/lib/settings/api";
+//   import settings from "@/lib/settings"; settings.save(...)
+//   import settings from "@/lib/settings/api"; settings.save(...)
+// Also exposes a safe global window.__a11ySave for last-resort compatibility.
 
 export type A11yAppearance = {
   theme: "light" | "dark" | "system";
@@ -32,7 +31,9 @@ function load(): A11yAppearance {
 }
 
 function persist(prefs: A11yAppearance) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch {}
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+  } catch {}
 }
 
 function apply(prefs: A11yAppearance) {
@@ -48,11 +49,11 @@ function apply(prefs: A11yAppearance) {
     root.classList.toggle("dark", dark);
   }
 
-  // Font size (opt-in; requires index.css rules)
+  // Font size (opt-in via index.css)
   if (prefs.fontSize) root.setAttribute("data-fontsize", prefs.fontSize);
   else root.removeAttribute("data-fontsize");
 
-  // High contrast focus
+  // High contrast
   if (prefs.highContrast) root.setAttribute("data-high-contrast", "");
   else root.removeAttribute("data-high-contrast");
 
@@ -60,11 +61,12 @@ function apply(prefs: A11yAppearance) {
   if (prefs.reduceMotion) root.setAttribute("data-reduce-motion", "");
   else root.removeAttribute("data-reduce-motion");
 
-  // Density (affects tables)
+  // Density
   if (prefs.density) root.setAttribute("data-density", prefs.density);
   else root.removeAttribute("data-density");
 }
 
+// Public API
 export async function getAppearance(): Promise<A11yAppearance> {
   return load();
 }
@@ -76,7 +78,7 @@ export async function save(nextPrefs: A11yAppearance): Promise<void> {
   apply(merged);
 }
 
-// Optional boot
+// Boot on app start (optional)
 export function bootAppearance() {
   const prefs = load();
   apply(prefs);
@@ -89,5 +91,12 @@ export function bootAppearance() {
   else mq.addListener(handler);
 }
 
-// Default export is the function `save` (important for your onClick usage).
-export default save;
+// default export for compatibility
+const settings = { save, getAppearance, bootAppearance };
+export default settings;
+
+// Safe global for legacy callers (will not throw if imported differently)
+try {
+  // @ts-ignore
+  window.__a11ySave = save;
+} catch {}

@@ -1,15 +1,15 @@
 
-import "./index.css"; // keep your global styles
+// src/index.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { AuthProvider } from "@/contexts/AuthProvider";
-import AuthGate from "@/components/auth/AuthGate";
+import { bootA11y } from "@/lib/a11y/apply";
+import "./index.css";
+
+bootA11y();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <AuthProvider>
-    <AuthGate fallback={null}>
-      <App />
-    </AuthGate>
-  </AuthProvider>
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
 );
