@@ -153,6 +153,7 @@ export type Database = {
           seller_id: string
           specifications: Json | null
           status: string
+          is_visible: boolean
           title: string
           unit: string
           updated_at: string
@@ -173,6 +174,7 @@ export type Database = {
           seller_id: string
           specifications?: Json | null
           status?: string
+          is_visible?: boolean
           title: string
           unit: string
           updated_at?: string
@@ -193,6 +195,7 @@ export type Database = {
           seller_id?: string
           specifications?: Json | null
           status?: string
+          is_visible?: boolean
           title?: string
           unit?: string
           updated_at?: string

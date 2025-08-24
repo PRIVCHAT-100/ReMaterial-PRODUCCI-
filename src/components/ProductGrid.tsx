@@ -133,7 +133,7 @@ useEffect(() => {
         `);
 
       // Filtro por estado activo (si lo usas). Quita este filtro si tu BD no tiene 'active'
-      query = query.eq("status", "active");
+      query = query.eq("status", "active").eq("is_visible", true);
 
       // Búsqueda por texto (solo si hay columna search_vector)
       if (searchQuery && searchQuery.trim()) {
@@ -180,7 +180,7 @@ useEffect(() => {
               id, first_name, last_name, company_name
             )
           `)
-          .eq("status", "active")
+          .eq("status", "active").eq("is_visible", true)
           .order("created_at", { ascending: false });
         if (!retry1.error) {
           data = retry1.data;
@@ -189,7 +189,7 @@ useEffect(() => {
           const retry2 = await supabase
             .from("products")
             .select(`*`)
-            .eq("status", "active")
+            .eq("status", "active").eq("is_visible", true)
             .order("created_at", { ascending: false });
           if (retry2.error) throw retry2.error;
           data = retry2.data;

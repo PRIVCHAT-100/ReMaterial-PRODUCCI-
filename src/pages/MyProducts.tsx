@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -7,240 +7,181 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Package, 
-  Edit3, 
-  Trash2, 
-  Eye, 
-  Heart, 
-  Plus,
-  AlertCircle 
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Package,
+  Edit3,
+  Trash2,
+  Eye,
+  EyeOff,
+  Plus,
+  Search,
+  MapPin,
+} from "lucide-react";
 
-const MyProducts = () => {
+type Product = {
+  id: string;
+  title: string;
+  price: number;
+  quantity: number;
+  unit: string;
+  images: string[] | null;
+  location: string | null;
+  category: string;
+  status: string;
+  created_at: string;
+  is_visible?: boolean;
+};
+
+export default function MyProducts() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
 
   useEffect(() => {
-    if (user) {
-      fetchProducts();
-    }
+    let ignore = false;
+    const load = async () => {
+      if (!user) return;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("products")
+        .select(`id,title,price,quantity,unit,images,location,category,status,created_at,is_visible`)
+        .eq("seller_id", user.id)
+        .order("created_at", { ascending: false });
+      if (!ignore) {
+        if (error) {
+          console.error(error);
+          setProducts([]);
+        } else {
+          setProducts(data || []);
+        }
+        setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      ignore = true;
+    };
   }, [user]);
 
-  const fetchProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('seller_id', user?.id)
-        .order('created_at', { ascending: false });
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return products;
+    return products.filter((p) => {
+      const hay = `${p.title ?? ""} ${p.category ?? ""} ${p.location ?? ""}`.toLowerCase();
+      return hay.includes(term);
+    });
+  }, [products, q]);
 
-    if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar tus productos",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+  const toggleVisibility = async (id: string, current: boolean | undefined) => {
+    const next = !current;
+    // Optimistic update
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_visible: next } : p)));
+    const { error } = await supabase.from("products").update({ is_visible: next }).eq("id", id);
+    if (error) {
+      console.error(error);
+      // revert
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_visible: current } : p)));
     }
   };
 
-  const handleDelete = async (productId: string) => {
-    try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId);
-
-      if (error) throw error;
-
-      setProducts(prev => prev.filter(p => p.id !== productId));
-      toast({
-        title: "Producto eliminado",
-        description: "El producto ha sido eliminado exitosamente",
-      });
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el producto",
-        variant: "destructive",
-      });
+  const handleDelete = async (id: string) => {
+    if (!confirm("¿Seguro que quieres eliminar este producto? Esta acción no se puede deshacer.")) return;
+    const prev = products;
+    setProducts((p) => p.filter((x) => x.id !== id));
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) {
+      console.error(error);
+      setProducts(prev);
     }
   };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'sold': return 'bg-blue-100 text-blue-800';
-      case 'paused': return 'bg-yellow-100 text-yellow-800';
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-48 bg-muted rounded-lg mb-4"></div>
-                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-muted rounded w-1/2"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Mis Productos</h1>
-            <p className="text-muted-foreground">Gestiona tu inventario y ventas</p>
+
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Package className="h-6 w-6" />
+            <h1 className="text-2xl font-semibold">Mis productos</h1>
+            <Badge variant="secondary">{products.length}</Badge>
           </div>
-          <Button onClick={() => navigate('/sell')} type="button">
+          <Button onClick={() => navigate('/sell')}>
             <Plus className="h-4 w-4 mr-2" />
-            Nuevo Producto
+            Añadir producto
           </Button>
         </div>
 
-        {products.length === 0 ? (
+        <div className="mb-6 relative">
+          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por título, categoría o ubicación..."
+            className="pl-9"
+          />
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-64 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <Card>
-            <CardContent className="p-12 text-center">
-              <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No tienes productos</h3>
-              <p className="text-muted-foreground mb-6">
-                Comienza a vender publicando tu primer producto
-              </p>
-              <Button onClick={() => navigate('/sell')} type="button">
-                <Plus className="h-4 w-4 mr-2" />
-                Publicar Primer Producto
-              </Button>
-            </CardContent>
+            <CardHeader>
+              <CardTitle>No hay resultados</CardTitle>
+            </CardHeader>
+            <CardContent>Prueba con otro término o crea un nuevo producto.</CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <Card key={product.id} className="overflow-hidden">
-                <div className="aspect-video bg-muted flex items-center justify-center">
-                  {product.images && product.images.length > 0 ? (
-                    <img 
-                      src={product.images[0]} 
-                      alt={product.title}
-                      className="w-full h-full object-cover"
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filtered.map((p) => (
+              <Card key={p.id} className="group overflow-hidden cursor-pointer" onClick={() => navigate(`/product/${p.id}`)}>
+                <CardHeader className="p-0 relative">
+                  <div className="relative overflow-hidden rounded-t-lg">
+                    <img
+                      src={p.images?.[0] ?? '/placeholder.png'}
+                      alt={p.title}
+                      className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                  ) : (
-                    <Package className="h-16 w-16 text-muted-foreground" />
-                  )}
-                </div>
-                
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg line-clamp-2">{product.title}</CardTitle>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="secondary">{product.category}</Badge>
-                        <Badge className={getStatusColor(product.status)}>
-                          {product.status}
-                        </Badge>
-                      </div>
-                    </div>
+                    {!p.is_visible && (
+                      <Badge className="absolute top-2 left-2 bg-yellow-500 text-black">Oculto</Badge>
+                    )}
                   </div>
                 </CardHeader>
-
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="text-2xl font-bold text-primary">
-                      €{product.price}
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-medium truncate">{p.title}</h3>
+                      <div className="text-sm text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        <span className="truncate">{p.location || '—'}</span>
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {product.quantity} {product.unit}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-4 w-4" />
-                      {product.views || 0}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Heart className="h-4 w-4" />
-                      {product.favorites || 0}
+                    <div className="text-right shrink-0">
+                      <div className="font-semibold">{p.price.toLocaleString('es-ES')}€</div>
+                      <div className="text-xs text-muted-foreground">{p.quantity} {p.unit}</div>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => navigate(`/products/${product.id}`)}
-                    >
-                      Ver
+                  <div className="mt-3 flex items-center justify-between">
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); navigate(`/edit-product/${p.id}`); }}>
+                        <Edit3 className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); toggleVisibility(p.id, p.is_visible); }}>
+                        {p.is_visible !== false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                    {/* 🔧 EDIT: ahora va al editor real y pasa el producto por state */}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => navigate(`/edit/${product.id}`, { state: { product } })}
-                      title="Editar"
-                    >
-                      <Edit3 className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta acción no se puede deshacer. El producto será eliminado permanentemente.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(product.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Eliminar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>
@@ -248,10 +189,8 @@ const MyProducts = () => {
           </div>
         )}
       </div>
-      
+
       <Footer />
     </div>
   );
-};
-
-export default MyProducts;
+}
