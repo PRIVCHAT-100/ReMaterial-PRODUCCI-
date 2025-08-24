@@ -1,44 +1,87 @@
-import React from "react";
-import FormSection from "../FormSection";
-import { getLegalMeta } from "@/lib/settings/api";
 
-export default function SupportLegal() {
-  const [loading, setLoading] = React.useState(true);
-  const [meta, setMeta] = React.useState<any>(null);
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useSupportLegal } from "../hooks/useSupportLegal";
+import If from "@/components/utils/If";
 
-  React.useEffect(() => {
-    (async () => {
-      const m = await getLegalMeta();
-      setMeta(m);
-      setLoading(false);
-    })();
-  }, []);
+const TERMS_VERSION = "1.0";
+const PRIVACY_VERSION = "1.0";
+const STATUS_URL = "https://status.example.com"; // cámbialo si tienes uno real
+const HELP_URL = "/help"; // o URL externa a tu centro de ayuda
 
-  if (loading || !meta) return <div className="rounded-2xl border p-6">Cargando…</div>;
+export default function SupportLegalSection() {
+  const { data, createTicket, acceptLegal, loading, saving } = useSupportLegal();
+  const disabled = loading || saving;
 
   return (
-    <div className="space-y-4">
-      <FormSection title="Centro de ayuda">
-        <button className="px-3 py-1.5 rounded-xl border" onClick={()=>alert("Abrir centro de ayuda / FAQ")}>Abrir ayuda</button>
-      </FormSection>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Centro de ayuda / FAQ</CardTitle>
+          <CardDescription>Encuentra respuestas rápidas.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <a href={HELP_URL} className="underline text-primary">Abrir centro de ayuda</a>
+        </CardContent>
+      </Card>
 
-      <FormSection title="Contactar soporte">
-        <button className="px-3 py-1.5 rounded-xl border" onClick={()=>alert("Crear ticket o mailto:support@rematerial.example")}>Crear ticket</button>
-      </FormSection>
+      <Card>
+        <CardHeader>
+          <CardTitle>Contactar soporte</CardTitle>
+          <CardDescription>Crearemos un ticket con tu mensaje.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Input placeholder="Asunto" id="s-subject" />
+          <Textarea placeholder="Describe el problema o sugerencia" id="s-message" />
+          <Button
+            onClick={() => {
+              const subject = (document.getElementById("s-subject") as HTMLInputElement).value.trim();
+              const message = (document.getElementById("s-message") as HTMLTextAreaElement).value.trim();
+              if (!subject || !message) return;
+              createTicket(subject, message);
+              (document.getElementById("s-subject") as HTMLInputElement).value = "";
+              (document.getElementById("s-message") as HTMLTextAreaElement).value = "";
+            }}
+            disabled={disabled}
+          >
+            Enviar
+          </Button>
+        </CardContent>
+      </Card>
 
-      <FormSection title="Estado del sistema">
-        <a className="underline" href="#" onClick={(e)=>{e.preventDefault(); alert("Ir a página de status");}}>Ver estado</a>
-      </FormSection>
+      <If flag="settings.support.status">
+        <Card>
+          <CardHeader>
+            <CardTitle>Estado del sistema</CardTitle>
+            <CardDescription>Consulta incidencias en tiempo real.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <a href={STATUS_URL} className="underline text-primary" target="_blank" rel="noreferrer">Abrir status</a>
+          </CardContent>
+        </Card>
+      </If>
 
-      <FormSection title="Legal">
-        <div className="text-sm text-zinc-600">Términos y Condiciones — versión {meta.termsVersionAccepted || "—"}</div>
-        <div className="text-sm text-zinc-600">Privacidad — versión {meta.privacyVersionAccepted || "—"}</div>
-        <div className="text-sm text-zinc-600">Aceptado el {meta.acceptedAt ? new Date(meta.acceptedAt).toLocaleString() : "—"}</div>
-      </FormSection>
-
-      <FormSection title="Reportar un problema / sugerencias">
-        <button className="px-3 py-1.5 rounded-xl border" onClick={()=>alert("Abrir formulario de reporte")}>Reportar</button>
-      </FormSection>
+      <Card>
+        <CardHeader>
+          <CardTitle>Términos y privacidad</CardTitle>
+          <CardDescription>Última versión aceptada por tu cuenta.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="text-sm text-muted-foreground">
+            Aceptado: {data.legal.accepted_at ? new Date(data.legal.accepted_at).toLocaleString() : "—"}
+            {" "}| Términos v{data.legal.terms_version ?? "—"} | Privacidad v{data.legal.privacy_version ?? "—"}
+          </div>
+          <div className="flex gap-2">
+            <a className="underline text-primary" href="/terms" target="_blank" rel="noreferrer">Términos y Condiciones</a>
+            <a className="underline text-primary" href="/privacy" target="_blank" rel="noreferrer">Política de Privacidad</a>
+          </div>
+          <Button onClick={() => acceptLegal(TERMS_VERSION, PRIVACY_VERSION)} disabled={disabled}>
+            Aceptar v{TERMS_VERSION}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
