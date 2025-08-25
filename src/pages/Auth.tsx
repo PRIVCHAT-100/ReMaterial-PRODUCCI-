@@ -7,9 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
+import { upsertProfileIsSeller } from "@/lib/roles/upsertProfileIsSeller";
 import { ArrowLeft, Building, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import GeoConsentAfterSignup from "@/components/auth/GeoConsentAfterSignup";
+import { SellerToggle } from "@/components/auth/SellerToggle";
 
 const Auth = () => {
   const { t } = useTranslation();
@@ -106,7 +108,13 @@ const Auth = () => {
       };
 
       await signUp(registerData.email, registerData.password, userData);
-      setGeoOpen(true);
+      
+      try {
+        const userDataResp = await supabase.auth.getUser();
+        const user = userDataResp.data?.user ?? null;
+        if (user) { await upsertProfileIsSeller(user.id, user.email ?? null, registerData.isSeller); }
+      } catch {}
+setGeoOpen(true);
     } catch (error) {
       console.error("Error signing up:", error);
     } finally {

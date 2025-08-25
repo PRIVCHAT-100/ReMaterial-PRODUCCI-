@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { upsertProfileIsSeller } from "@/lib/roles/upsertProfileIsSeller";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SellerToggle } from "@/components/auth/SellerToggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -25,6 +27,7 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
+    isSeller: false,
     email: "",
     password: "",
     confirmPassword: "",
@@ -62,10 +65,17 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
         location: formData.location,
         website: formData.website,
         user_type: 'business',
+        is_seller: formData.isSeller,
       };
       
       await signUp(formData.email, formData.password, userData);
-      onOpenChange(false);
+      
+      try {
+        const userDataResp = await supabase.auth.getUser();
+        const user = userDataResp.data?.user ?? null;
+        if (user) { await upsertProfileIsSeller(user.id, user.email ?? null, formData.isSeller); }
+      } catch {}
+onOpenChange(false);
       setGeoPromptOpen(true);
       setFormData({
         email: "",
@@ -208,7 +218,8 @@ export const RegisterDialog = ({ open, onOpenChange, onSwitchToLogin }: Register
             />
           </div>
           
-          <Button type="submit" className="w-full" disabled={loading}>
+          <SellerToggle checked={formData.isSeller} onChange={(v) => setFormData(prev => ({ ...prev, isSeller: v }))} />
+<Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Crear Cuenta
           </Button>

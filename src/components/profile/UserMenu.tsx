@@ -1,6 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useEffect } from "react";
-
+import { useEffect, useState, useRef } from "react";
 import ProfileAvatar from "@/components/common/ProfileAvatar";
 import {
   DropdownMenu,
@@ -16,56 +15,75 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getUnreadTotals } from "@/features/chat/chatApi";
+import { useProfileRole } from "@/hooks/useProfileRole";
 
+/**
+ * IMPORTANTE: Todos los hooks viven en el top-level y en el mismo orden SIEMPRE.
+ * Nada de hooks dentro de condiciones o retornos tempranos.
+ */
 export const UserMenu = () => {
+  // 1) Hooks SIEMPRE en el mismo orden
+  const { user, signOut } = useAuth();
+  const { data } = useProfileRole();
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  // 2) Estados/refs
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const aliveRef = useRef(true);
+  const isSeller = !!data?.isSeller;
 
+  // 3) Efectos (no condicionales)
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => { aliveRef.current = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const fetchTotals = async () => {
+      try {
+        const { productTotal, generalTotal } = await getUnreadTotals(user.id);
+        if (aliveRef.current) {
+          setUnreadCount((productTotal ?? 0) + (generalTotal ?? 0));
+        }
+      } catch {
+        // silencioso
+      }
+    };
+
+    // Primera carga
+    fetchTotals();
+
+    // Suscripción a cambios
+    channel = supabase
+      .channel(`unread-badge-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, () => {
+        fetchTotals();
+      })
+      .subscribe();
+
+    // Refresco periódico
+    interval = setInterval(fetchTotals, 30000);
+
+    return () => {
+      if (interval) clearInterval(interval);
+      try { if (channel) supabase.removeChannel(channel); } catch {}
+    };
+  }, [user?.id]);
+
+  // 4) Render (el return puede ser condicional; los hooks NO)
   if (!user) return null;
-
-  const getInitials = (email: string) => {
-    return email.slice(0, 2).toUpperCase();
-  };
 
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
-  
-// --- Unread badge state (suma de product + general) ---
-const [unreadCount, setUnreadCount] = useState<number>(0);
-
-useEffect(() => {
-  if (!user?.id) return;
-  let alive = true;
-
-  const fetchTotals = async () => {
-    try {
-      const { productTotal, generalTotal } = await getUnreadTotals(user.id);
-      if (alive) setUnreadCount((productTotal ?? 0) + (generalTotal ?? 0));
-    } catch {}
-  };
-
-  fetchTotals();
-
-  const channel = supabase
-    .channel(`unread-badge-${user.id}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
-      fetchTotals();
-    })
-    .subscribe();
-
-  const interval = setInterval(fetchTotals, 30000);
-
-  return () => {
-    alive = false;
-    clearInterval(interval);
-    try { supabase.removeChannel(channel); } catch {}
-  };
-}, [user?.id]);
-return (
+  return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full" type="button">
@@ -80,41 +98,58 @@ return (
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.user_metadata?.company_name || 'Usuario'}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
-            </p>
+            <p className="text-sm font-medium leading-none">{user.user_metadata?.company_name || "Usuario"}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handleNavigation('/profile')}>
+
+        <DropdownMenuItem onClick={() => handleNavigation("/profile")}>
           <User className="mr-2 h-4 w-4" />
-          <span>{t('ui.mi-perfil')}</span>
+          <span>{t("ui.mi-perfil")}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleNavigation('/dashboard')}>
-          <BarChart3 className="mr-2 h-4 w-4" />
-          <span>Dashboard</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleNavigation('/my-products')}>
-          <Package className="mr-2 h-4 w-4" />
-          <span>{t('ui.mis-productos')}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleNavigation('/favorites')}>
+
+        {isSeller && (
+          <DropdownMenuItem onClick={() => handleNavigation("/dashboard")}>
+            <BarChart3 className="mr-2 h-4 w-4" />
+            <span>Dashboard</span>
+          </DropdownMenuItem>
+        )}
+
+        {isSeller && (
+          <DropdownMenuItem onClick={() => handleNavigation("/my-products")}>
+            <Package className="mr-2 h-4 w-4" />
+            <span>{t("ui.mis-productos")}</span>
+          </DropdownMenuItem>
+        )}
+
+        {isSeller && (
+          <DropdownMenuItem onClick={() => handleNavigation("/sell")}>
+            <Package className="mr-2 h-4 w-4" />
+            <span>{t("ui.vender")}</span>
+          </DropdownMenuItem>
+        )}
+
+        <DropdownMenuItem onClick={() => handleNavigation("/favorites")}>
           <Heart className="mr-2 h-4 w-4" />
-          <span>{t('ui.favoritos')}</span>
+          <span>{t("ui.favoritos")}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleNavigation('/messages')}>
+
+        <DropdownMenuItem onClick={() => handleNavigation("/messages")}>
           <MessageSquare className="mr-2 h-4 w-4" />
-          <span>{t('ui.mensajes')}</span>
+          <span>{t("ui.mensajes")}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleNavigation('/settings')}>
+
+        <DropdownMenuItem onClick={() => handleNavigation("/settings")}>
           <Settings className="mr-2 h-4 w-4" />
-          <span>{t('ui.configuraci-n')}</span>
+          <span>{t("ui.configuracion")}</span>
         </DropdownMenuItem>
+
         <DropdownMenuSeparator />
+
         <DropdownMenuItem onClick={signOut}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>{t('ui.cerrar-sesi-n')}</span>
+          <span>{t("ui.cerrar-sesion")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

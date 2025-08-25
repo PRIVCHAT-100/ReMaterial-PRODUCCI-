@@ -37,6 +37,8 @@ import { useTranslation } from "react-i18next";
 // ✅ NUEVO: páginas públicas de ayuda
 import HelpCenter from "@/pages/HelpCenter";
 import HowItWorks from "@/pages/HowItWorks";
+import SellerRoute from "@/components/SellerRoute";
+import UpgradeSeller from "@/pages/UpgradeSeller";
 
 const queryClient = new QueryClient();
 const maintenance = import.meta.env.VITE_MAINTENANCE === 'true';
@@ -119,11 +121,9 @@ const App: React.FC = () => {
               />
               <Route
                 path="/dashboard"
-                element={
-                  <PrivateRoute>
+                element={<SellerRoute><PrivateRoute>
                     <Dashboard />
-                  </PrivateRoute>
-                }
+                  </PrivateRoute></SellerRoute>}
               />
               <Route
                 path="/messages"
@@ -135,27 +135,27 @@ const App: React.FC = () => {
               />
               <Route
                 path="/sell"
-                element={
+                element={<SellerRoute>
                   <PrivateRoute>
                     <SellProduct />
                   </PrivateRoute>
-                }
+                </SellerRoute>}
               />
               <Route
                 path="/my-products"
-                element={
+                element={<SellerRoute>
                   <PrivateRoute>
                     <MyProducts />
                   </PrivateRoute>
-                }
+                </SellerRoute>}
               />
               <Route
                 path="/edit/:id"
-                element={
+                element={<SellerRoute>
                   <PrivateRoute>
                     <EditProduct />
                   </PrivateRoute>
-                }
+                </SellerRoute>}
               />
               <Route
                 path="/favorites"
@@ -238,7 +238,8 @@ const App: React.FC = () => {
 
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
+              <Route path="/upgrade-seller" element={<UpgradeSeller />} />
+</Routes>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

@@ -3,8 +3,12 @@ import { MapPin, Mail, Phone, Facebook, Twitter, Linkedin, Instagram } from "luc
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
+import { useProfileRole } from "@/hooks/useProfileRole";
 
 const Footer = () => {
+  const { data } = useProfileRole();
+  const isSeller = !!data?.isSeller;
+
   const { t } = useTranslation();
 
   return (
@@ -56,7 +60,7 @@ const Footer = () => {
               <a href="/settings?tab=support#how-it-works" className="block text-background/70 hover:text-background transition-colors">
                 {t('ui.c-mo-funciona')}
               </a>
-              <a href="/sell" className="block text-background/70 hover:text-background transition-colors">{t('ui.vender-materiales')}</a>
+              {isSeller && <a href="/sell" className="block text-background/70 hover:text-background transition-colors">{t('ui.vender-materiales')}</a>}
               <a href="/companies" className="block text-background/70 hover:text-background transition-colors">{t('ui.para-empresas')}</a>
               <a href="/explore" className="block text-background/70 hover:text-background transition-colors">{t('ui.categor-as')}</a>
               <a href="/terms" className="block text-background/70 hover:text-background transition-colors">{t('ui.precios-y-comisiones')}</a>

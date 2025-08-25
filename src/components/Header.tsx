@@ -13,12 +13,14 @@ import {
   SheetContent,
   SheetClose,
 } from "@/components/ui/sheet";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Header = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user } = useAuth() as any;
   const navigate = useNavigate();
   const location = useLocation();
+  const { isSeller } = useUserRole();
 
   // Mostrar buscador SOLO en Explorar (ajusta ruta si tu home es otra)
   const isExplore = useMemo(() => location.pathname === "/", [location.pathname]);
@@ -96,7 +98,7 @@ const Header = () => {
             <Button variant="ghost" className="text-foreground hover:text-primary" onClick={() => navigate("/")} type="button">
               Explorar
             </Button>
-            {user && (
+            {isSeller && (
               <Button variant="ghost" className="text-foreground hover:text-primary" onClick={() => navigate("/sell")} type="button">
                 <Plus className="h-4 w-4 mr-2" />{t('ui.vender')}</Button>
             )}
@@ -175,7 +177,7 @@ const Header = () => {
                       </SheetClose>
                     </li>
 
-                    {user && (
+                    {isSeller && (
                       <li>
                         <SheetClose asChild>
                           <NavLink
