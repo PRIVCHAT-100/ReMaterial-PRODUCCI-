@@ -94,7 +94,7 @@ export default function Account() {
     try {
       // 1) Actualiza user_metadata (como ya hacía)
       const meta: UserMeta = {};
-      if (name) meta.full_name = name, meta.name = name;
+      if (name) meta.full_name = name, meta.name = name, (meta as any).company_name = name;
       if (avatar) meta.avatar_url = avatar, meta.picture = avatar;
       const { error: metaErr } = await supabase.auth.updateUser({ data: meta });
       if (metaErr) throw metaErr;
@@ -105,7 +105,7 @@ export default function Account() {
       if (user?.id && name) {
         const { error: profErr } = await supabase
           .from("profiles")
-          .update({ display_name: name })
+          .update({ display_name: name, company_name: name })
           .eq("id", user.id);
         if (profErr) throw profErr;
       }

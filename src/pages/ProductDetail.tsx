@@ -5,6 +5,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
+import DistanceBadge from "@/components/DistanceBadge";
+import { getBrowserLocation } from "@/utils/geolocate";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,6 +41,9 @@ const ProductDetail = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [detailIndex, setDetailIndex] = useState(0);
   const [counterOpen, setCounterOpen] = useState(false);
+
+  const [me, setMe] = useState<{ latitude:number; longitude:number }|null>(null);
+  useEffect(() => { getBrowserLocation().then(setMe); }, []);
 
   useEffect(() => {
     if (id) {
@@ -363,6 +368,11 @@ useEffect(() => {
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   {product.location}
+                  <DistanceBadge
+                    me={me}
+                    item={product.latitude && product.longitude ? { latitude: product.latitude, longitude: product.longitude } : null}
+                    className="ml-1 opacity-70"
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />

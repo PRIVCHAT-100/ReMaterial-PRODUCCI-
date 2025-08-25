@@ -138,6 +138,17 @@ const Profile = () => {
     try {
 // Garantiza que logo_url se guarde aunque updateProfile limite columnas
       try { await supabase.from('profiles').update({ logo_url: profile.logo_url }).eq('id', user?.id); } catch {}
+
+      // Sincroniza nombre de empresa en perfiles + user_metadata para que se vea en el menú
+      try {
+        if (user?.id && profile.company_name) {
+          await supabase.from('profiles').update({ company_name: profile.company_name }).eq('id', user.id);
+          await supabase.auth.updateUser({ data: { company_name: profile.company_name } });
+          // Opcional: avisar a quien escuche (Header/UserMenu) para refrescar
+          window.dispatchEvent(new Event('profile:updated'));
+        }
+      } catch (e) { console.warn('No se pudo sincronizar company_name:', e); }
+
       toast({ title: 'Perfil actualizado' });
     } catch (error) {
       console.error('Error updating profile:', error);

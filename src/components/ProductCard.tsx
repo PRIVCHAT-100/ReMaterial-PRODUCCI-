@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
+import DistanceBadge from "@/components/DistanceBadge";
 
 interface ProductCardProps {
   id: string;
@@ -18,11 +20,14 @@ interface ProductCardProps {
     name: string;
     rating: number;
     verified: boolean;
-  
-  shippingAvailable?: boolean;};
+    shippingAvailable?: boolean;
+  };
   description: string;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
+  // 🆕 coordenadas opcionales
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 const ProductCard = ({ 
@@ -35,11 +40,27 @@ const ProductCard = ({
   seller, 
   description,
   isFavorite = false,
-  onToggleFavorite
+  onToggleFavorite,
+  latitude = null,
+  longitude = null,
 }: ProductCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // 🆕 coordenadas del comprador desde localStorage
+  const [me, setMe] = useState<{ latitude:number; longitude:number } | null>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user_coords_v1");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.lat === "number" && typeof parsed.lng === "number") {
+          setMe({ latitude: parsed.lat, longitude: parsed.lng });
+        }
+      }
+    } catch {}
+  }, []);
 
   const handleContact = () => {
     if (!user) {
@@ -52,6 +73,7 @@ const ProductCard = ({
     }
     navigate(`/messages?seller=${seller.id}&product=${id}`);
   };
+
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border border-border bg-card">
       <CardHeader className="p-0 relative">
@@ -77,9 +99,9 @@ const ProductCard = ({
           <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
             {category}
           </Badge>
-          {typeof shippingAvailable !== "undefined" && (
+          {typeof seller.shippingAvailable !== "undefined" && (
             <Badge className="absolute top-10 left-2" variant="secondary">
-              {shippingAvailable ? "Envío" : "Sin envío"}
+              {seller.shippingAvailable ? "Envío" : "Sin envío"}
             </Badge>
           )}
         </div>
@@ -118,7 +140,14 @@ const ProductCard = ({
             </div>
             <div className="flex items-center text-muted-foreground">
               <MapPin className="h-3 w-3 mr-1" />
-              <span className="text-xs">{location}</span>
+              <span className="text-xs">
+                {location}
+                <DistanceBadge
+                  me={me}
+                  item={latitude != null && longitude != null ? { latitude: Number(latitude), longitude: Number(longitude) } : null}
+                  className="ml-1 opacity-70"
+                />
+              </span>
             </div>
           </div>
         </div>

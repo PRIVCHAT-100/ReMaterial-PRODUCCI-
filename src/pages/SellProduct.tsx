@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getBrowserLocation } from "@/utils/geolocate";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -118,6 +119,7 @@ const SellProduct = () => {
 
     try {
       // Create product
+      const coords = await getBrowserLocation({ enableHighAccuracy: true, timeout: 10000 });
       const { data: product, error: productError } = await supabase
         .from('products')
         .insert({
@@ -132,6 +134,8 @@ const SellProduct = () => {
           allow_direct_purchase: formData.allow_direct_purchase,
           specifications: formData.specifications,
           seller_id: user.id,
+          latitude: coords?.latitude ?? null,
+          longitude: coords?.longitude ?? null,
           status: 'active',
           // 🆕 FIX: guardar disponibilidad de envío
           shipping_available: formData.shipping_available,

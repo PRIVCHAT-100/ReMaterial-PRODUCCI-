@@ -122,13 +122,7 @@ export const UserMenu = () => {
             <span>{t("ui.mis-productos")}</span>
           </DropdownMenuItem>
         )}
-
-        {isSeller && (
-          <DropdownMenuItem onClick={() => handleNavigation("/sell")}>
-            <Package className="mr-2 h-4 w-4" />
-            <span>{t("ui.vender")}</span>
-          </DropdownMenuItem>
-        )}
+ 
 
         <DropdownMenuItem onClick={() => handleNavigation("/favorites")}>
           <Heart className="mr-2 h-4 w-4" />

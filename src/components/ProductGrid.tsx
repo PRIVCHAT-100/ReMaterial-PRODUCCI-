@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import FiltersSidebar, { FiltersState } from "./FiltersSidebar";
 import { useTranslation } from "react-i18next";
+import { getBrowserLocation } from "@/utils/geolocate";
 
 interface ProductGridProps {
   selectedCategory: string;
@@ -106,6 +107,15 @@ useEffect(() => {
       }
     }
   } catch {}
+}, []);
+
+useEffect(() => {
+  getBrowserLocation({ enableHighAccuracy: true, timeout: 10000 }).then((pos) => {
+    if (pos) {
+      setUserCoords({ lat: pos.latitude, lng: pos.longitude });
+      try { localStorage.setItem("user_coords_v1", JSON.stringify({ lat: pos.latitude, lng: pos.longitude })); } catch {}
+    }
+  });
 }, []);
 
   const { toast } = useToast();
@@ -603,7 +613,10 @@ useEffect(() => {
                         shippingAvailable={!!product.shipping_available}
                         isFavorite={favorites.includes(product.id)}
                         onToggleFavorite={() => toggleFavorite(product.id)}
+                        latitude={product.latitude}
+                        longitude={product.longitude}
                       />
+
                     </div>
                   ))}
                 </div>

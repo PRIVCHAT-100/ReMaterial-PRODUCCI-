@@ -172,7 +172,7 @@ export default function MyProducts() {
 
                   <div className="mt-3 flex items-center justify-between">
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); navigate(`/edit-product/${p.id}`); }}>
+                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); navigate(`/edit/${p.id}`); }}>
                         <Edit3 className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); toggleVisibility(p.id, p.is_visible); }}>

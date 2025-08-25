@@ -1,5 +1,6 @@
 import React from "react";
 import "./i18n";
+import "@/setupAutoToasts";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,6 +34,7 @@ import RepairData from "@/pages/RepairData";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useTranslation } from "react-i18next";
+
 
 // ✅ NUEVO: páginas públicas de ayuda
 import HelpCenter from "@/pages/HelpCenter";
