@@ -102,7 +102,7 @@ const Header = () => {
               <Button variant="ghost" className="text-foreground hover:text-primary" onClick={() => navigate("/sell")} type="button">
                 <Plus className="h-4 w-4 mr-2" />{t('ui.vender')}</Button>
             )}
-            <Button variant="ghost" className="text-foreground hover:text-primary" onClick={() => navigate("/companies")} type="button">
+            <Button variant="ghost" className="text-foreground hover:text-primary" onClick={() => navigate("/empresas")} type="button">
               Empresas
             </Button>
           </nav>
@@ -167,7 +167,7 @@ const Header = () => {
                     <li>
                       <SheetClose asChild>
                         <NavLink
-                          to="/companies"
+                          to="/empresas"
                           className={({ isActive }) =>
                             `${linkBase} ${isActive ? linkActive : ""} ${linkHover}`
                           }

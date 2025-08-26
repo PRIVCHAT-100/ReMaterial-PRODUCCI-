@@ -61,7 +61,7 @@ const Footer = () => {
                 {t('ui.c-mo-funciona')}
               </a>
               {isSeller && <a href="/sell" className="block text-background/70 hover:text-background transition-colors">{t('ui.vender-materiales')}</a>}
-              <a href="/companies" className="block text-background/70 hover:text-background transition-colors">{t('ui.para-empresas')}</a>
+              <a href="/empresas" className="block text-background/70 hover:text-background transition-colors">{t('ui.para-empresas')}</a>
               <a href="/explore" className="block text-background/70 hover:text-background transition-colors">{t('ui.categor-as')}</a>
               <a href="/terms" className="block text-background/70 hover:text-background transition-colors">{t('ui.precios-y-comisiones')}</a>
             </nav>

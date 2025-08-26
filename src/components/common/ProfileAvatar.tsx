@@ -29,6 +29,7 @@ const sizeClasses: Record<NonNullable<ProfileAvatarProps["size"]>, string> = {
  * - Si no hay src y existe profileId, hace fetch de profiles.logo_url.
  * - Fallback con iniciales (blanco sobre fondo primario).
  */
+/* patched to prioritize avatar_url and display_name */
 export default function ProfileAvatar({ src, name, profileId, className, size = "md" }: ProfileAvatarProps) {
   const [url, setUrl] = useState<string | null | undefined>(src);
 

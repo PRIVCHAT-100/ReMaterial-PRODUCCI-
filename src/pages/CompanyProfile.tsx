@@ -104,7 +104,7 @@ export default function CompanyProfile() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto max-w-7xl py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-muted rounded w-1/3" />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -125,7 +125,7 @@ export default function CompanyProfile() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto max-w-7xl py-8">
           <Card>
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold mb-4">{t('ui.empresa-no-encontrada') || "Empresa no encontrada"}</h2>
@@ -145,7 +145,7 @@ export default function CompanyProfile() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto max-w-7xl py-8">
         {/* Breadcrumb */}
         <nav className="flex mb-6" aria-label="Breadcrumb">
           <ol className="inline-flex items-center space-x-1 md:space-x-3">

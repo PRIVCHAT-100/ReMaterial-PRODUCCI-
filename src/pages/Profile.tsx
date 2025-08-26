@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 
 import ProfileAvatar from "@/components/common/ProfileAvatar";
+import BuyerProfileForm from "@/components/profile/BuyerProfileForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
+import { useProfileRole } from "@/hooks/useProfileRole";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +16,13 @@ import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Globe, Phone, Mail, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { Navigate } from "react-router-dom";
 
 const Profile = () => {
+  const role = useProfileRole();
+  if (role?.data && role.data.isAuthenticated && !role.data.isSeller) {
+    return <Navigate to="/settings" replace />;
+  }
   const { t } = useTranslation();
 
   const { user, updateProfile } = useAuth();

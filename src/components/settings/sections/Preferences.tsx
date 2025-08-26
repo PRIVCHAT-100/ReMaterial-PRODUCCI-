@@ -5,9 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { usePreferences } from "../hooks/usePreferences";
+import { useProfileRole } from "@/hooks/useProfileRole";
 
 export default function PreferencesSection() {
   const { prefs, setPrefs, save, loading, saving } = usePreferences();
+  const role = useProfileRole();
+  const isSeller = !!role.data?.isSeller;
   const disabled = loading || saving;
 
   return (
@@ -39,6 +42,7 @@ export default function PreferencesSection() {
         </CardContent>
       </Card>
 
+      {isSeller && (
       <Card>
         <CardHeader>
           <CardTitle>Preferencias de publicación</CardTitle>
@@ -67,7 +71,10 @@ export default function PreferencesSection() {
           </div>
         </CardContent>
       </Card>
+      )}
 
+
+      {isSeller && (
       <Card>
         <CardHeader>
           <CardTitle>Plantillas de oferta/contrato</CardTitle>
@@ -111,6 +118,8 @@ export default function PreferencesSection() {
           </div>
         </CardContent>
       </Card>
+      )}
+
 
       <div className="flex justify-end">
         <Button onClick={() => save(prefs)} disabled={disabled}>{saving ? "Guardando..." : "Guardar cambios"}</Button>

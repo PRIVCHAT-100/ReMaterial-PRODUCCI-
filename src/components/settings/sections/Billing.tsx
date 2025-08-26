@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useBilling } from "../hooks/useBilling";
 import { useState, useEffect } from "react";
+import { useProfileRole } from "@/hooks/useProfileRole";
 
 export default function BillingSection() {
   const { data, setData, saveTax, loading, saving } = useBilling();
@@ -15,8 +16,12 @@ export default function BillingSection() {
     setLocalTax(data.tax);
   }, [data.tax]);
 
+  const role = useProfileRole();
+  const isSeller = !!role.data?.isSeller;
+
   return (
     <div className="space-y-6">
+      {isSeller && (
       <Card>
         <CardHeader>
           <CardTitle>Datos fiscales</CardTitle>
@@ -55,6 +60,8 @@ export default function BillingSection() {
           </div>
         </CardContent>
       </Card>
+      )}
+
 
       <Card>
         <CardHeader>

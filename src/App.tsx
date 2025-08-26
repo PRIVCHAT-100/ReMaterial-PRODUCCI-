@@ -35,12 +35,14 @@ import PaymentSuccess from "@/pages/PaymentSuccess";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useTranslation } from "react-i18next";
 
-
 // ✅ NUEVO: páginas públicas de ayuda
 import HelpCenter from "@/pages/HelpCenter";
 import HowItWorks from "@/pages/HowItWorks";
 import SellerRoute from "@/components/SellerRoute";
 import UpgradeSeller from "@/pages/UpgradeSeller";
+
+// ✅ NUEVO: Explorador de empresas con mapa Leaflet
+import CompaniesExplore from "@/pages/CompaniesExplore";
 
 const queryClient = new QueryClient();
 const maintenance = import.meta.env.VITE_MAINTENANCE === 'true';
@@ -111,6 +113,9 @@ const App: React.FC = () => {
               <Route path="/terms" element={<Terms />} />
               <Route path="/repair-data" element={<RepairData />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
+
+              {/* ✅ NUEVO: Explorador de empresas con mapa */}
+              <Route path="/empresas" element={<CompaniesExplore />} />
 
               {/* Protegidas */}
               <Route
@@ -241,7 +246,7 @@ const App: React.FC = () => {
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
               <Route path="/upgrade-seller" element={<UpgradeSeller />} />
-</Routes>
+            </Routes>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

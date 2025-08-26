@@ -1,8 +1,15 @@
 import React from "react";
+import { useProfileRole } from "@/hooks/useProfileRole";
 import FormSection from "../FormSection";
 import { getCompanyProfile, updateCompanyProfile } from "@/lib/settings/api";
 
 export default function Company() {
+  // SettingsRoleGuardApplied
+  const role = useProfileRole();
+  if (role.data && role.data.isAuthenticated && !role.data.isSeller) {
+    return null;
+  }
+
   const [loading, setLoading] = React.useState(true);
   const [form, setForm] = React.useState<any>({ legalName:"", tradeName:"", taxId:"", sector:"", description:"", website:"", phone:"", address:"", visibility:"public" });
 
