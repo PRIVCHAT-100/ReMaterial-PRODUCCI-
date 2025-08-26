@@ -240,7 +240,7 @@ export default function CompaniesExplore() {
       <Header />
 
       {/* Contenido de la página */}
-      <div className="p-4 md:p-6">
+      <div className="pt-4 md:pt-6">
         {/* ✅ Tu banner arriba de Empresas (ajusta props si tu Banner las usa) */}
         <Banner />
 
@@ -294,7 +294,7 @@ export default function CompaniesExplore() {
         {/* Layout principal */}
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-12">
           {/* Filtros */}
-          <aside className="md:col-span-3">
+          <aside className="md:col-span-4">
             <Card className="sticky top-4">
               <CardHeader>
                 <CardTitle className="text-base">Filtros</CardTitle>
@@ -377,7 +377,7 @@ export default function CompaniesExplore() {
           </aside>
 
           {/* Resultados + mapa */}
-          <section className="md:col-span-9">
+          <section className="md:col-span-8">
             {/* Barra superior de resultados / tabs mobile */}
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="text-sm text-muted-foreground">
@@ -553,7 +553,7 @@ function CompanyMap({
   const spainBounds: [[number, number], [number, number]] = [[27.5, -18.5], [43.9, 4.6]];
 
   return (
-    <Card className="h-[420px] overflow-hidden">
+    <Card className="h-[520px] overflow-hidden">
       <CardHeader className="p-4">
         <CardTitle className="text-base flex items-center gap-2">
           <MapPin className="h-4 w-4" /> Mapa de España

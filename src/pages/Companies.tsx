@@ -134,7 +134,7 @@ const Companies = () => {
         <section>
           <BannerHero
             items={COMPANY_BANNERS}
-            heightClass="h-[200px] md:h-[280px] lg:h-[340px]"
+            heightClass="h-[220px] md:h-[300px] lg:h-[360px]"
             showArrows
             showDots
             className="rounded-2xl shadow-lg shadow-black/10 hover:shadow-xl hover:scale-[1.01] transition"
