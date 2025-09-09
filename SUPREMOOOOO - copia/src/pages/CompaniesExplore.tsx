@@ -103,8 +103,101 @@ export default function CompaniesExplore() {
   });
 
   // Carga desde Supabase (tabla profiles) sin filtros de servidor
-  // Auto-geolocate disabled to base results only on vendor-provided addresses.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, error } = await supabase.from("profiles").select("*");
+        if (error) throw error;
+        const rows = Array.isArray(data) ? data : [];
 
+        // Filtrado en cliente por "is_seller" o "role === seller" si existen; si no, mostramos todos
+        const onlySellers = rows.filter((r: any) => {
+          if ("is_seller" in r) return r.is_seller === true || r.is_seller === "true" || r.is_seller === 1;
+          if ("role" in r) return String(r.role).toLowerCase() === "seller";
+          return true;
+        });
+
+        const mapped: Company[] = onlySellers.map((row: any) => ({
+          id: row.id,
+          name: row.company_name ?? row.full_name ?? row.name ?? "Empresa",
+          sector: row.sector ?? null,
+          city: row.city ?? null,
+          province: row.province ?? null,
+          address_line1: row.address_line1 ?? row.address ?? row.location ?? null,
+          postal_code: row.postal_code ?? null,
+          country: row.country ?? 'España',
+          lat: typeof row.latitude === "string" ? parseFloat(row.latitude.replace(",", ".")) : (row.latitude ?? row.lat ?? null),
+          lng: typeof row.longitude === "string" ? parseFloat(row.longitude.replace(",", ".")) : (row.longitude ?? row.lng ?? null),
+          verified: row.verified ?? null,
+          certifications: Array.isArray(row.certifications)
+            ? row.certifications
+            : (typeof row.certifications === "string"
+              ? row.certifications.split(",").map((s: string) => s.trim()).filter(Boolean)
+              : null),
+          website: row.website ?? null,
+          size: row.size ?? null,
+          products: row.products_count ?? row.products ?? null,
+          favorites: row.favorites ?? null,
+          logo_url: row.logo_url ?? null,
+        }));
+
+        if (alive) setCompanies(mapped);
+        // 🔎 Geocodificar en cliente empresas sin lat/lng (no rompe nada existente)
+        (async () => {
+          try {
+            const needGeo = mapped.filter(c => (!c.lat || !c.lng) && (c.address_line1 || c.city || c.province || c.postal_code));
+            if (needGeo.length === 0) return;
+
+            const updated = [...mapped];
+            for (const c of needGeo) {
+              const address = [c.location, c.address_line1, c.postal_code, c.city, c.province, c.country].filter(Boolean).join(", ");
+              if (!address || address.trim().length === 0) { continue; }
+              try {
+                const coords = await geocodeAddress(address);
+                if (coords) {
+                  const idx = updated.findIndex(x => x.id === c.id);
+                  if (idx >= 0) {
+                    updated[idx] = { ...updated[idx], lat: coords.lat, lng: coords.lng };
+                  }
+                  // Persistir de forma *opcional* si la tabla tiene columnas latitude/longitude
+                  try {
+                    // @ts-ignore - si no existen las columnas, Supabase ignorará o fallará silenciosamente según RLS
+                    await supabase.from("profiles").update({ latitude: coords.lat, longitude: coords.lng }).eq("id", c.id);
+                  } catch {}
+                }
+              } catch {}
+            }
+            if (alive) setCompanies(updated);
+          } catch {}
+        })();
+        /* GEOCODE_MISSING */
+    
+      } catch (e: any) {
+        if (alive) setError(e?.message ?? "Error cargando empresas");
+        console.error("[CompaniesExplore] error:", e);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+    // Intentar fijar ubicación base del usuario al cargar (si hay permiso)
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLoc((prev) => prev?.lat === coords.lat && prev?.lng === coords.lng ? prev : coords);
+        try { saveCoords(coords); } catch {}
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }, []); /* AUTO_GEO_BASE */
 
 // Acciones
   const toggleFav = (id: string) => {
