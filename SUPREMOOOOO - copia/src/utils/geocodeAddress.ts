@@ -6,6 +6,28 @@
  * - Retries with backoff, handles HTTP 429 (rate limiting).
  * - Increases timeout to 10s.
  */
+
+function normalizeAddress(raw: string): string {
+  try {
+    let s = (raw || "").trim();
+
+    // Replace common Spanish/Catalan street abbreviations at start
+    s = s.replace(/^(C\/|C\.|Calle\s+|Carrer\s+|Av\.|Ave\.|Avenida\s+|Passeig\s+|Pg\.|Paseo\s+)/i, "");
+    // Collapse whitespace and commas
+    s = s.replace(/\s*,\s*/g, ", ").replace(/\s+/g, " ").trim();
+    // Remove trailing commas
+    s = s.replace(/,+$/g, "").trim();
+
+    // If it's too generic (e.g., "España", "Spain"), return empty so caller can skip
+    const lower = s.toLowerCase();
+    if (lower === "españa" || lower === "spain") return "";
+
+    // If too short, skip
+    if (s.length < 8) return "";
+
+    return s;
+  } catch { return ""; }
+}
 const GEO_CACHE_KEY = "geo_cache_v1";
 const geoMemCache: Map<string, { lat: number; lng: number }> = new Map();
 
@@ -31,7 +53,7 @@ function sleep(ms: number) {
 
 export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   try {
-    const addr = (address || "").trim();
+    const addr = normalizeAddress(address);
     if (!addr) return null;
 
     // memory cache first

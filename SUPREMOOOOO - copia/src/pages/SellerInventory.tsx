@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useProfileRole } from "@/hooks/useProfileRole";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { hasAdvancedInventory } from "@/lib/billing/guards";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -103,6 +105,12 @@ export default function SellerInventoryPage() {
   const userIdRef = useRef<string | null>(null);
 
   // Cargar productos del vendedor
+  const { data: profileRole } = useProfileRole();
+
+  if (profileRole && !hasAdvancedInventory(profileRole.plan as any)) {
+    return (<div className="max-w-3xl mx-auto p-6"><div className="rounded-xl border bg-amber-50 border-amber-300 text-amber-900 p-4">La gestión de inventario avanzada es exclusiva de <b>Premium</b> y <b>Pro+</b>. <a className="underline" href="/plans">Mejorar plan</a></div></div>);
+  }
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -136,6 +144,7 @@ export default function SellerInventoryPage() {
   }, []);
 
   // Suscripción a cambios en tiempo real
+
   useEffect(() => {
     const uid = userIdRef.current;
     if (!uid) return;

@@ -10,5 +10,8 @@ export default function SellerRoute({ children }: { children: JSX.Element }) {
   if (!data?.isAuthenticated) return <Navigate to="/auth" replace />;
   if (!data.isSeller) return <Navigate to="/upgrade-seller" replace />;
 
+  // enforce active plan for sellers
+  if (!data.plan || data.planStatus !== 'active') return <Navigate to="/plans" replace />;
+
   return children;
 }

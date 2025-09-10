@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfileRole } from "@/hooks/useProfileRole";
 import { supabase } from "@/integrations/supabase/client";
 import { getBrowserLocation } from "@/utils/geolocate";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { productLimitFor } from "@/lib/billing/guards";
 import { Upload, X, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SectorSubcategoryField, { SectorSubcategoryValue } from "@/components/forms/SectorSubcategoryField";
@@ -20,6 +22,20 @@ import SectorCascadeMenu, { SectorCascadeValue } from "@/components/forms/Sector
 const SellProduct = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { data: role } = useProfileRole();
+  const [myCount, setMyCount] = useState<number>(0);
+  const planLimit = productLimitFor(role?.plan as any);
+  const overLimit = planLimit !== 'unlimited' && myCount >= (planLimit as number);
+
+  useEffect(() => { (async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { count } = await supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('seller_id', user.id);
+    setMyCount(count || 0);
+  })(); }, []);
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
@@ -104,6 +120,7 @@ const SellProduct = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    if (overLimit) { alert('Has alcanzado el límite de publicaciones de tu plan. Mejora tu plan para publicar más.'); return; }
     e.preventDefault();
 
     if (!user) {
@@ -199,6 +216,12 @@ const SellProduct = () => {
             <h1 className="text-3xl font-bold text-foreground mb-2">Publicar Producto</h1>
             <p className="text-muted-foreground">Añade tus materiales excedentes al marketplace</p>
           </div>
+
+          {overLimit && (
+            <div className="rounded-xl border border-yellow-300 bg-yellow-50 text-yellow-900 p-3 mb-4">
+              Has alcanzado el límite de publicaciones de tu plan. <a className="underline" href="/plans">Mejorar plan</a>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">
@@ -431,7 +454,7 @@ const SellProduct = () => {
                 <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={loading} className="flex-1">
+                <Button type="submit" disabled={loading || overLimit} className="flex-1">
                   {loading ? 'Publicando...' : 'Publicar Producto'}
                 </Button>
               </div>

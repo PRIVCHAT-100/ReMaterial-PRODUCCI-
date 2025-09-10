@@ -14,6 +14,8 @@ import { MoreVertical } from "lucide-react";
 import ConfirmDeleteChat from "@/components/chat/ConfirmDeleteChat";
 import { ImageCarousel } from "@/components/ImageCarousel";
 
+import { createOrderAndDecrementInventory } from "@/lib/chat/orders";
+
 // --- Tipos públicos para integrar en tu app ---
 export type Role = "buyer" | "seller";
 export type OfferStatus = "pending" | "accepted" | "rejected" | "withdrawn";
@@ -195,6 +197,30 @@ function getReservationColor(inventory: number, reservedQuantity: number) {
 }
 
 export default function NegotiationChatLayout(props: NegotiationChatProps) {
+
+async function handleDirectPurchase() {
+  try {
+    if (!currentConversation || !currentConversation.product_id || !session?.user?.id) return;
+    const buyer_id = session.user.id;
+    const seller_id = currentConversation.seller_id || currentConversation.other_user_id;
+    const product_id = currentConversation.product_id;
+    const quantity = 1;
+    const final_price = currentConversation.final_price || currentConversation.agreed_price || 0;
+    const conversation_id = currentConversation.id;
+
+    setIsProcessingPurchase?.(true);
+    await createOrderAndDecrementInventory(supabase, { product_id, buyer_id, seller_id, quantity, final_price, conversation_id });
+    // Optional: toast/notification
+    // toast.success(t?.("ui.compra-confirmada") || "Compra confirmada");
+    setPurchaseConfirmed?.(true);
+  } catch (e:any) {
+    console.error("[DirectPurchase] error", e);
+    // toast.error(e.message || "No se pudo completar la compra");
+  } finally {
+    setIsProcessingPurchase?.(false);
+  }
+}
+
   const {
     conversations,
     activeTab,

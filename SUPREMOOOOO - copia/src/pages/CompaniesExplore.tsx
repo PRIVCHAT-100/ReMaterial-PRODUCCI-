@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+// Reduce noisy logging in production to speed up dev tools and avoid blocking main thread
+const VERBOSE_GEOCODE = false;
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -102,102 +104,173 @@ export default function CompaniesExplore() {
     return saved ? saved : { lat: 41.3874, lng: 2.1686 };
   });
 
+  // Guard to avoid running the initial load twice in React StrictMode (dev)
+  const didInitialLoad = useRef(false);
+
+
   // Carga desde Supabase (tabla profiles) sin filtros de servidor
   useEffect(() => {
-    let alive = true;
+    if (didInitialLoad.current) return;
+    didInitialLoad.current = true;
+    let isMounted = true;
     (async () => {
-      setLoading(true);
-      setError(null);
       try {
-        const { data, error } = await supabase.from("profiles").select("*");
+        setLoading(true);
+        setError(null);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, company_name, sector, city, province, logo_url, location, address_line1, address_number, postal_code, country, latitude, longitude')
+          .not('company_name', 'is', null)
+          .or('is_seller.eq.true,is_seller.is.null');
+
         if (error) throw error;
+
         const rows = Array.isArray(data) ? data : [];
+        const mapped = rows.map((r: any) => ({
+          id: r.id,
+          name: r.company_name ?? '',
+          sector: r.sector ?? null,
+          city: r.city ?? null,
+          province: r.province ?? null,
+          logoUrl: r.logo_url ?? null,
+          location: r.location ?? null,
+          address_line1: r.address_line1 ?? null,
+          address_number: r.address_number ?? null,
+          postal_code: r.postal_code ?? null,
+          country: r.country ?? null,
+          lat: (typeof r.latitude === 'number') ? r.latitude : (typeof r.latitude === 'string' ? parseFloat(r.latitude) : null),
+          lng: (typeof r.longitude === 'number') ? r.longitude : (typeof r.longitude === 'string' ? parseFloat(r.longitude) : null),
+        })).filter((c: any) => !!c.name); // evita entradas vacías
 
-        // Filtrado en cliente por "is_seller" o "role === seller" si existen; si no, mostramos todos
-        const onlySellers = rows.filter((r: any) => {
-          if ("is_seller" in r) return r.is_seller === true || r.is_seller === "true" || r.is_seller === 1;
-          if ("role" in r) return String(r.role).toLowerCase() === "seller";
-          return true;
-        });
-
-        const mapped: Company[] = onlySellers.map((row: any) => ({
-          id: row.id,
-          name: row.company_name ?? row.full_name ?? row.name ?? "Empresa",
-          sector: row.sector ?? null,
-          city: row.city ?? null,
-          province: row.province ?? null,
-          address_line1: row.address_line1 ?? row.address ?? row.location ?? null,
-          postal_code: row.postal_code ?? null,
-          country: row.country ?? 'España',
-          lat: typeof row.latitude === "string" ? parseFloat(row.latitude.replace(",", ".")) : (row.latitude ?? row.lat ?? null),
-          lng: typeof row.longitude === "string" ? parseFloat(row.longitude.replace(",", ".")) : (row.longitude ?? row.lng ?? null),
-          verified: row.verified ?? null,
-          certifications: Array.isArray(row.certifications)
-            ? row.certifications
-            : (typeof row.certifications === "string"
-              ? row.certifications.split(",").map((s: string) => s.trim()).filter(Boolean)
-              : null),
-          website: row.website ?? null,
-          size: row.size ?? null,
-          products: row.products_count ?? row.products ?? null,
-          favorites: row.favorites ?? null,
-          logo_url: row.logo_url ?? null,
-        }));
-
-        if (alive) setCompanies(mapped);
-        // 🔎 Geocodificar en cliente empresas sin lat/lng (no rompe nada existente)
-        (async () => {
-          try {
-            const needGeo = mapped.filter(c => (!c.lat || !c.lng) && (c.address_line1 || c.city || c.province || c.postal_code));
-            if (needGeo.length === 0) return;
-
-            const updated = [...mapped];
-            for (const c of needGeo) {
-              const address = [c.location, c.address_line1, c.postal_code, c.city, c.province, c.country].filter(Boolean).join(", ");
-              if (!address || address.trim().length === 0) { continue; }
-              try {
-                const coords = await geocodeAddress(address);
-                if (coords) {
-                  const idx = updated.findIndex(x => x.id === c.id);
-                  if (idx >= 0) {
-                    updated[idx] = { ...updated[idx], lat: coords.lat, lng: coords.lng };
-                  }
-                  // Persistir de forma *opcional* si la tabla tiene columnas latitude/longitude
+        
+        // Fallback: geocodificar si faltan coordenadas (basado en datos del vendedor)
+        try {
+          const toFix = mapped.filter((c: any) => (c.lat == null || c.lng == null) && (c.city || c.province));
+          if (toFix.length) {
+            const { geocodeAddress } = await import("@/utils/geocodeAddress");
+            for (const c of toFix) {
+              const line = [c.address_line1, c.address_number].filter(Boolean).join(" ");
+              const full = [line, c.postal_code, c.city, c.province, c.country || "España"].filter(Boolean).join(", ");
+              let coords = await geocodeAddress(full);
+              if (!coords) {
+                // second attempt with city + postal code
+                const alt1 = [c.postal_code, c.city, c.country || 'España'].filter(Boolean).join(', ');
+                coords = await geocodeAddress(alt1);
+              }
+              if (!coords) {
+                // third attempt with street + city
+                const alt2 = [line, c.city, c.country || 'España'].filter(Boolean).join(', ');
+                coords = await geocodeAddress(alt2);
+              }
+              if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng)) {
+                  // Ignore overly-generic centroid results (Spain center ~ 39.3261, -4.8380)
+                  const nearSpainCentroid = Math.abs(coords.lat - 39.3261) < 0.05 && Math.abs(coords.lng + 4.8380) < 0.05;
+                  if (nearSpainCentroid && (!c.city && !c.province && !c.address_line1 && !c.postal_code && !c.location)) {
+                    if (VERBOSE_GEOCODE) console.warn('[CompaniesExplore] ignoring generic Spain centroid for', { id: c.id, name: c.name });
+                  } else {
+                  if (VERBOSE_GEOCODE) console.info('[CompaniesExplore] geocode success', { id: c.id, name: c.name, lat: coords.lat, lng: coords.lng });
+                  // Persist coords so siguientes cargas no dependan del fallback
                   try {
-                    // @ts-ignore - si no existen las columnas, Supabase ignorará o fallará silenciosamente según RLS
-                    await supabase.from("profiles").update({ latitude: coords.lat, longitude: coords.lng }).eq("id", c.id);
-                  } catch {}
+                    // [SAFE PATCH] Disabled direct profile coords update in client to avoid RLS violations.
+// await supabase.from('profiles').update({ latitude: coords.lat, longitude: coords.lng }).eq('id', c.id)
+// Use server-side function to persist coords for other users.;
+                    if (VERBOSE_GEOCODE) console.info('[CompaniesExplore] persist coords ok', { id: c.id });
+                  }
+                  catch(perr) {
+                    if (VERBOSE_GEOCODE) console.warn('[CompaniesExplore] persist coords fail', { id: c.id, err: perr });
+                  }
+                c.lat = coords.lat;
+                c.lng = coords.lng;
+              }
+              } else {
+                  if (VERBOSE_GEOCODE) console.warn('[CompaniesExplore] geocode failed', { id: c.id, name: c.name });
+                }
+            }
+          }
+        } catch(gerr) {
+          console.warn("[CompaniesExplore] geocode fallback warn:", gerr);
+        }
+
+        console.info('[CompaniesExplore] data counts', { rows: rows.length, mapped: mapped.length, withCoords: mapped.filter((x:any)=>Number.isFinite(x.lat)&&Number.isFinite(x.lng)).length });
+        
+        // Fallback: geocodificar en cliente si no hay coordenadas en BD
+        try {
+          const needsGeo = mapped.filter((c: any) => (c.lat == null || c.lng == null) && (c.address_line1 || c.city || c.province || c.location));
+          if (needsGeo.length) {
+            const { geocodeAddress } = await import("@/utils/geocodeAddress");
+            // Limitar para evitar bloqueo si hay muchas (ej. primeras 25)
+            const candidates = needsGeo.slice(0, 25);
+            for (const c of candidates) {
+              // Construir dirección con múltiples alternativas
+              const line1 = [c.address_line1, c.address_number].filter(Boolean).join(' ').trim();
+              let fullAddr = [line1, c.postal_code, c.city, c.province, c.country || 'España'].filter(Boolean).join(', ');
+              if (!fullAddr || fullAddr.replace(/[,\s]/g,'') === '') {
+                // usar 'location' si existe
+                if (c.location) fullAddr = String(c.location);
+                // o al menos ciudad + país
+                else if (c.city) fullAddr = [c.city, c.country || 'España'].join(', ');
+                else if (c.province) fullAddr = [c.province, c.country || 'España'].join(', ');
+              }
+              if (VERBOSE_GEOCODE) console.info('[CompaniesExplore] geocode attempt', { id: c.id, name: c.name, full: fullAddr });
+              const line = [c.address_line1, c.address_number].filter(Boolean).join(" ");
+              const full = [line, c.postal_code, c.city, c.province, c.country || "España"].filter(Boolean).join(", ");
+              try {
+                let coords = await geocodeAddress(full);
+              if (!coords) {
+                // second attempt with city + postal code
+                const alt1 = [c.postal_code, c.city, c.country || 'España'].filter(Boolean).join(', ');
+                coords = await geocodeAddress(alt1);
+              }
+              if (!coords) {
+                // third attempt with street + city
+                const alt2 = [line, c.city, c.country || 'España'].filter(Boolean).join(', ');
+                coords = await geocodeAddress(alt2);
+              }
+                if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng)) {
+                  // Ignore overly-generic centroid results (Spain center ~ 39.3261, -4.8380)
+                  const nearSpainCentroid = Math.abs(coords.lat - 39.3261) < 0.05 && Math.abs(coords.lng + 4.8380) < 0.05;
+                  if (nearSpainCentroid && (!c.city && !c.province && !c.address_line1 && !c.postal_code && !c.location)) {
+                    if (VERBOSE_GEOCODE) console.warn('[CompaniesExplore] ignoring generic Spain centroid for', { id: c.id, name: c.name });
+                  } else {
+                  if (VERBOSE_GEOCODE) console.info('[CompaniesExplore] geocode success', { id: c.id, name: c.name, lat: coords.lat, lng: coords.lng });
+                  // Persist coords so siguientes cargas no dependan del fallback
+                  try {
+                    // [SAFE PATCH] Disabled direct profile coords update in client to avoid RLS violations.
+// await supabase.from('profiles').update({ latitude: coords.lat, longitude: coords.lng }).eq('id', c.id)
+// Use server-side function to persist coords for other users.;
+                    if (VERBOSE_GEOCODE) console.info('[CompaniesExplore] persist coords ok', { id: c.id });
+                  }
+                  catch(perr) {
+                    if (VERBOSE_GEOCODE) console.warn('[CompaniesExplore] persist coords fail', { id: c.id, err: perr });
+                  }
+                  c.lat = coords.lat;
+                  c.lng = coords.lng;
+                }
                 }
               } catch {}
             }
-            if (alive) setCompanies(updated);
-          } catch {}
-        })();
-        /* GEOCODE_MISSING */
-    
-      } catch (e: any) {
-        if (alive) setError(e?.message ?? "Error cargando empresas");
-        console.error("[CompaniesExplore] error:", e);
+          }
+        } catch(gerr) {
+          console.warn("[CompaniesExplore] geocode fallback warn:", gerr);
+        }
+
+        const withCoords = mapped.filter((x:any)=>Number.isFinite(x.lat)&&Number.isFinite(x.lng)).length;
+        if (VERBOSE_GEOCODE) console.info('[CompaniesExplore] post-fallback coords', { withCoords });
+        if (isMounted) setCompanies(mapped);
+
+
+      } catch (e) {
+        console.error('[CompaniesExplore] fetch error:', (e && (e.message || e.error_description || e.hint)) || e);
+        if (isMounted) { setError((e as any)?.message ?? 'Error al cargar'); setCompanies([]); }
       } finally {
-        if (alive) setLoading(false);
+        if (isMounted) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => { isMounted = false };
   }, []);
 
-    // Intentar fijar ubicación base del usuario al cargar (si hay permiso)
-  useEffect(() => {
-    if (!('geolocation' in navigator)) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setUserLoc((prev) => prev?.lat === coords.lat && prev?.lng === coords.lng ? prev : coords);
-        try { saveCoords(coords); } catch {}
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  }, []); /* AUTO_GEO_BASE */
+  // Auto-geolocate disabled to base results only on vendor-provided addresses.
+
 
 // Acciones
   const toggleFav = (id: string) => {
@@ -298,6 +371,30 @@ export default function CompaniesExplore() {
 
     return items;
   }, [companies, q, sector, size, certsOnly, verifiedOnly, radiusKm, sortBy, userLoc]);
+  // Igual que 'filtered' pero sin filtro de radio (para ver todo en el mapa)
+  const filteredNoRadius = useMemo(() => {
+    const qlc = (q || "").trim().toLowerCase();
+    let items = companies.filter((c) => {
+      const hayTexto = !qlc || [c.name, c.sector, c.city, c.province].filter(Boolean).some((s) => String(s).toLowerCase().includes(qlc));
+      const okSector = sector === "Todos" || (c.sector && c.sector === sector);
+      const okSize = size === "todas" || (c.size && c.size === size);
+      const okCerts = !certsOnly || !!c.certifications;
+      const okVerified = !verifiedOnly || !!c.verified;
+      return hayTexto && okSector && okSize && okCerts && okVerified;
+    });
+    // Mantener el mismo ordeneo seleccionado, pero sin radio
+    items.sort((a, b) => {
+      if (sortBy === "nearby") {
+        return 0; // sin radio no priorizamos distancia
+      }
+      if (sortBy === "products") {
+        return (b.products ?? 0) - (a.products ?? 0);
+      }
+      return 0;
+    });
+    return items;
+  }, [companies, q, sector, size, certsOnly, verifiedOnly, sortBy]);
+
 
 
 // Paginación (depende de 'filtered')
@@ -314,38 +411,42 @@ React.useEffect(() => { setPage(1); }, [q, sector, size, certsOnly, verifiedOnly
 
   return (
     <div className="container mx-auto px-4 pt-6">
-      {/* ✅ Header global */}
-      <Header />
+      {/* Header fijo como Explorar */}
+      <div className="fixed top-0 inset-x-0 z-50 bg-white">
+        <Header />
+      </div>
+      {/* Espaciador para evitar solape con el contenido */}
+      <div className="h-16" />
+      
+      {/* ✅ Tu banner arriba de Empresas (ajusta props si tu Banner las usa) */}
+      <div className="relative lg:col-span-full">
+        <a aria-label="hola" className="block group" href="/explore">
+          <div className="relative w-full overflow-hidden rounded-2xl shadow-sm bg-muted">
+            <img
+              src="https://images.unsplash.com/photo-1581091014534-6c6821cc0f51?q=80&w=1600&auto=format&fit=crop"
+              alt="hola"
+              className="w-full h-[220px] sm:h-[320px] object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+            <div className="absolute bottom-0 left-0 p-4 sm:p-6 text-white">
+              <h3 className="text-xl sm:text-2xl font-semibold drop-shadow">hola</h3>
+            </div>
+            <div className="absolute bottom-3 right-4 flex gap-2">
+              <button aria-label="Ir al banner 1" className="h-2 w-2 rounded-full bg-white" />
+              <button aria-label="Ir al banner 2" className="h-2 w-2 rounded-full bg-white/50" />
+              <button aria-label="Ir al banner 3" className="h-2 w-2 rounded-full bg-white/50" />
+              <button aria-label="Ir al banner 4" className="h-2 w-2 rounded-full bg-white/50" />
+            </div>
+          </div>
+          <span className="absolute inset-0" />
+        </a>
+        <button aria-label="Anterior" className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/30 text-white rounded-full px-2 py-1">‹</button>
+        <button aria-label="Siguiente" className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/30 text-white rounded-full px-2 py-1">›</button>
+      </div>
 
       {/* Contenido de la página */}
       <div className="">
-        {/* ✅ Tu banner arriba de Empresas (ajusta props si tu Banner las usa) */}
-        <div className="relative lg:col-span-full">
-  <a aria-label="hola" className="block group" href="/explore">
-    <div className="relative w-full overflow-hidden rounded-2xl shadow-sm bg-muted">
-      <img
-        src="https://images.unsplash.com/photo-1581091014534-6c6821cc0f51?q=80&w=1600&auto=format&fit=crop"
-        alt="hola"
-        className="w-full h-[220px] sm:h-[320px] object-cover"
-        loading="lazy"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-      <div className="absolute bottom-0 left-0 p-4 sm:p-6 text-white">
-        <h3 className="text-xl sm:text-2xl font-semibold drop-shadow">hola</h3>
-      </div>
-      <div className="absolute bottom-3 right-4 flex gap-2">
-        <button aria-label="Ir al banner 1" className="h-2 w-2 rounded-full bg-white" />
-        <button aria-label="Ir al banner 2" className="h-2 w-2 rounded-full bg-white/50" />
-        <button aria-label="Ir al banner 3" className="h-2 w-2 rounded-full bg-white/50" />
-        <button aria-label="Ir al banner 4" className="h-2 w-2 rounded-full bg-white/50" />
-      </div>
-    </div>
-    <span className="absolute inset-0" />
-  </a>
-  <button aria-label="Anterior" className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/30 text-white rounded-full px-2 py-1">‹</button>
-  <button aria-label="Siguiente" className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/30 text-white rounded-full px-2 py-1">›</button>
-</div>
-
         {/* Título y acciones */}
         <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -353,7 +454,7 @@ React.useEffect(() => { setPage(1); }, [q, sector, size, certsOnly, verifiedOnly
             <p className="text-sm text-muted-foreground">Explora empresas por sector, ubicación, certificaciones y más.</p>
           </div>
           <div className="flex items-center gap-2">
-<Button variant="outline" className="gap-2" onClick={handleNearMe}><Compass className="h-4 w-4" /> Cerca de mí</Button>
+            <Button variant="outline" className="gap-2" onClick={handleNearMe}><Compass className="h-4 w-4" /> Cerca de mí</Button>
             <Tabs value={view} onValueChange={(v: any) => setView(v)} className="hidden md:block">
               <TabsList>
                 <TabsTrigger value="grid">Grid</TabsTrigger>
@@ -456,7 +557,7 @@ React.useEffect(() => { setPage(1); }, [q, sector, size, certsOnly, verifiedOnly
                 {/* Verificadas */}
                 <div className="flex items-center gap-2">
                   <Checkbox id="verified" checked={verifiedOnly} onCheckedChange={(v) => setVerifiedOnly(Boolean(v))} />
-                  <Label htmlFor="verified" className="text-sm flex items-center gap-1"><BadgeCheck className="h-4 w-4" /> Solo verificadas</Label>
+                    <Label htmlFor="verified" className="text-sm flex items-center gap-1"><BadgeCheck className="h-4 w-4" /> Solo verificadas</Label>
                 </div>
               </CardContent>
             </Card>
@@ -512,7 +613,7 @@ React.useEffect(() => { setPage(1); }, [q, sector, size, certsOnly, verifiedOnly
 
             {view === "map" && (
               <CompanyMap
-                items={filtered}
+                items={filteredNoRadius}
                 onContact={(id) => navigate(`/messages?seller=${id}`)}
                 onView={(id) => navigate(`/companies/${id}`)}
               />
@@ -548,7 +649,7 @@ React.useEffect(() => { setPage(1); }, [q, sector, size, certsOnly, verifiedOnly
                   </div>
                 </div>
                 <CompanyMap
-                  items={filtered}
+                  items={filteredNoRadius}
                   onContact={(id) => navigate(`/messages?seller=${id}`)}
                   onView={(id) => navigate(`/companies/${id}`)}
                 />
@@ -596,54 +697,19 @@ function CompanyGrid({
                   )}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  {c.sector && (
-                    <>
-                      <span className="inline-flex items-center gap-1">
-                        <Factory className="h-3 w-3" /> {c.sector}
-                      </span>
-                      <span>•</span>
-                    </>
-                  )}
-                  {(c.city || c.province) && (
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> {c.city}
-                      {c.province ? ` (${c.province})` : ""}
-                    </span>
-                  )}
-                  {c.products != null && (
-                    <>
-                      <span>•</span>
-                      <span className="inline-flex items-center gap-1">
-                        <ListOrdered className="h-3 w-3" /> {c.products} productos
-                      </span>
-                    </>
-                  )}
+                  {c.sector && <Badge variant="outline">{c.sector}</Badge>}
+                  {c.city && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {c.city}</span>}
                 </div>
-                {Array.isArray(c.certifications) && c.certifications.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {c.certifications.map((cc) => (
-                      <Badge key={cc} variant="outline" className="text-[11px]">
-                        {cc}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button variant="secondary" size="sm" className="gap-1" onClick={() => onView(c.id)}>
-                      Ver perfil <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" className="gap-1" onClick={() => onContact(c.id)}>
-                      Contactar <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => onContact(c.id)}>Contactar</Button>
+                  <Button size="sm" variant="ghost" onClick={() => onView(c.id)}>Ver perfil</Button>
                   <Button
-                    variant={favs.includes(c.id) ? "secondary" : "ghost"}
                     size="icon"
+                    variant="ghost"
+                    className="ml-auto"
                     onClick={() => onFav(c.id)}
-                    aria-label="Favorito"
                   >
-                    {favs.includes(c.id) ? <Heart className="h-4 w-4" /> : <HeartOff className="h-4 w-4" />}
+                    {favs.includes(c.id) ? <HeartOff className="h-4 w-4" /> : <Heart className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
@@ -651,92 +717,56 @@ function CompanyGrid({
           </CardContent>
         </Card>
       ))}
-      {items.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center text-sm text-muted-foreground">
-            No hay empresas que coincidan con los filtros.
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
 
 // -------------------------------------
-// Mapa de España con React-Leaflet
-function CompanyMap({
-  items,
-  onContact,
-  onView,
-}: {
-  items: Company[];
-  onContact: (id: string) => void;
-  onView: (id: string) => void;
-}) {
-  const spainBounds: [[number, number], [number, number]] = [[27.5, -18.5], [43.9, 4.6]];
-
+// Mapa de empresas
+function CompanyMap({ items, onContact, onView }: { items: Company[]; onContact: (id: string) => void; onView: (id: string) => void; }) {
+  const center = { lat: 40.4168, lng: -3.7038 };
+  const zoom = 5;
   return (
-      <Card className="h-[420px] overflow-hidden">
-      <CardHeader className="p-4">
-        <CardTitle className="text-base flex items-center gap-2">
-          <MapPin className="h-4 w-4" /> Mapa de España
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="relative h-full p-0">
-        <div className="absolute inset-0">
-          <MapContainer className="h-full w-full" bounds={spainBounds} scrollWheelZoom preferCanvas>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
-            {items
-              .filter((c) => c.lat != null && c.lng != null)
-              .map((c) => (
-                <CircleMarker key={c.id} center={[c.lat as number, c.lng as number]} radius={6} pathOptions={{ color: "red", fillColor: "red", weight: 1, fillOpacity: 0.95 }}>
-                  <Tooltip permanent direction="right" offset={[10, 0]} opacity={1}>
-                    <span style={{ fontWeight: 600 }}>{c.name}</span>
-                  </Tooltip>
-
-                  <Popup>
-                    <div className="space-y-1">
-                      <div className="font-medium">{c.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {c.sector ? `${c.sector} • ` : ""}
-                        {c.city}
-                        {c.province ? ` (${c.province})` : ""}
-                      </div>
-                      {c.products != null && <div className="text-xs">{c.products} productos</div>}
-                      {Array.isArray(c.certifications) && c.certifications.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-1">
-                          {c.certifications.map((cc) => (
-                            <span key={cc} className="rounded border px-1.5 py-0.5 text-[10px]">
-                              {cc}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="pt-2 flex gap-2">
-                        <Button variant="secondary" size="sm" className="h-7" onClick={() => onView(c.id)}>
-                          Ver perfil
-                        </Button>
-                        <Button size="sm" className="h-7" onClick={() => onContact(c.id)}>
-                          Contactar
-                        </Button>
-                      </div>
-                    </div>
-                  </Popup>
-                </CircleMarker>
-              ))}
-          </MapContainer>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="h-[600px] w-full overflow-hidden rounded-lg border">
+      <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }}>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {items.filter((c) => c.lat != null && c.lng != null).map((c) => (
+          <CircleMarker
+            key={c.id}
+            center={[c.lat as number, c.lng as number]}
+            radius={5}
+            fillOpacity={0.7}
+            stroke={false}
+          >
+            <Tooltip permanent={false} direction="top" offset={[0, -10]} opacity={1}>
+              <div className="max-w-[200px]">
+                <h3 className="font-semibold">{c.name}</h3>
+                <p className="text-sm">{c.sector}</p>
+                <p className="text-xs">{c.city}</p>
+                <div className="mt-1 flex gap-1">
+                  <Button size="xs" onClick={() => onContact(c.id)}>Contactar</Button>
+                  <Button size="xs" variant="outline" onClick={() => onView(c.id)}>Ver</Button>
+                </div>
+              </div>
+            </Tooltip>
+          </CircleMarker>
+        ))}
+      </MapContainer>
+    </div>
   );
 }
 
 // -------------------------------------
-// Helpers
+// Utilidad: iniciales de un nombre
 function initials(name: string) {
-  const parts = name.split(" ").filter(Boolean);
-  return parts
+  return name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .filter(Boolean)
     .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join("");
+    .join("")
+    .toUpperCase();
 }

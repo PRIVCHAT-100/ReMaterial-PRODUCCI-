@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useProfileRole } from "@/hooks/useProfileRole";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { productLimitFor } from "@/lib/billing/guards";
 import {
   Package,
   Edit3,
@@ -37,6 +39,11 @@ type Product = {
 export default function MyProducts() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { data: role } = useProfileRole();
+  const planLimit = productLimitFor(role?.plan as any);
+  const total = products?.length || 0;
+  const overLimit = planLimit !== 'unlimited' && total >= (planLimit as number);
+  const nearLimit = planLimit !== 'unlimited' && total >= (planLimit as number) - 2;
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");

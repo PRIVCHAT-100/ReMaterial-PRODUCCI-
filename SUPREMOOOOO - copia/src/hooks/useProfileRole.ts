@@ -12,12 +12,12 @@ export function useProfileRole() {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,is_seller")
+        .select("id,is_seller,plan,plan_status")
         .eq("id", user.id)
         .maybeSingle(); // tolera ausencia de fila
 
       if (error) throw error;
-      return { isAuthenticated: true, isSeller: !!data?.is_seller };
+      return { isAuthenticated: true, isSeller: !!data?.is_seller, plan: data?.plan || null, planStatus: (data as any)?.plan_status || 'active' };
     },
     staleTime: 60_000,
   });

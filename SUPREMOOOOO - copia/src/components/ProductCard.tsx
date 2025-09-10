@@ -212,7 +212,7 @@ const ProductCard = ({
     <Card className="group hover:shadow-lg transition-all duration-300 border border-border bg-card">
       <CardHeader className="p-0 relative">
         <div className="relative overflow-hidden rounded-t-lg">
-          <img 
+          <img decoding="async" loading="lazy" 
             src={image} 
             alt={title}
             className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"

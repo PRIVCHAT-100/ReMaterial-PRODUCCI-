@@ -128,8 +128,16 @@ const Companies = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="max-w-screen-2xl mx-auto px-4">
+      {/* Header fijo como Explorar */}
+      <div className="fixed top-0 inset-x-0 z-50 bg-white">
+        <Header />
+      </div>
+      {/* Espaciador para que el contenido no quede oculto bajo el header */}
+      <div className="h-16" />
+        </div>
+      </div>
       <div className="container mx-auto">
         <section>
           <BannerHero

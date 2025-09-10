@@ -4,7 +4,7 @@ export async function getAvailableQuantity(productId: string): Promise<number> {
   // Primero obtener el inventario total del producto
   const { data: product, error } = await supabase
     .from("products")
-    .select("inventory, stock")
+    .select("quantity")
     .eq("id", productId)
     .single();
 

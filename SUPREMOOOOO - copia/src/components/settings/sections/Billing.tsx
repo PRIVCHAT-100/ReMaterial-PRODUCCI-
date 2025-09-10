@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useBilling } from "../hooks/useBilling";
+import { getMySubscription, openCustomerPortal, getIncludedKeywordsForPlan } from "@/lib/billing";
 import { useState, useEffect } from "react";
 import { useProfileRole } from "@/hooks/useProfileRole";
 
@@ -11,10 +12,24 @@ export default function BillingSection() {
   const { data, setData, saveTax, loading, saving } = useBilling();
   const [localTax, setLocalTax] = useState(data.tax);
   const disabled = loading || saving;
+  const [sub, setSub] = useState<any | null>(null);
+  const [subError, setSubError] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalTax(data.tax);
   }, [data.tax]);
+
+  // Carga de suscripción (plan/estado/renovación)
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await getMySubscription();
+        setSub(s as any);
+      } catch (e:any) {
+        setSubError(e?.message || "No se pudo cargar la suscripción");
+      }
+    })();
+  }, []);
 
   const role = useProfileRole();
   const isSeller = !!role.data?.isSeller;
@@ -66,6 +81,19 @@ export default function BillingSection() {
       <Card>
         <CardHeader>
           <CardTitle>Métodos de pago</CardTitle>
+          {/* Info de suscripción */}
+          {sub && (
+            <CardDescription className="mt-1">
+              Plan: <strong className="uppercase">{sub?.plan_tier || 'free'}</strong> — Estado: {sub?.status || 'inactive'}
+              {sub?.current_period_end && (
+                <> — Próxima renovación: {new Date(sub.current_period_end).toLocaleDateString()}</>
+              )}
+              <br />
+              Palabras clave incluidas gratis: <strong>{getIncludedKeywordsForPlan(sub?.plan_tier)}</strong>
+            </CardDescription>
+          )}
+          {subError && <CardDescription className="mt-1 text-red-600">{subError}</CardDescription>}
+
           <CardDescription>Gestiona tus tarjetas a través de Stripe.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

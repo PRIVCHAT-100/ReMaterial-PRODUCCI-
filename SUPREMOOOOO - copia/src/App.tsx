@@ -15,6 +15,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import LanguageNudge from "@/components/i18n/LanguageNudge";
 
 // Páginas
+import SettingsBilling from "@/pages/SettingsBilling";
+import Plans from "@/pages/Plans";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
@@ -252,9 +254,11 @@ const App: React.FC = () => {
                   </PrivateRoute></SellerRoute>}
               />
 
-                                          <Route path="/messages" element={<PrivateRoute><Messages_NEW_SKIN /></PrivateRoute>} />
-<Route path="/messages-new" element={<PrivateRoute><Messages_NEW_SKIN /></PrivateRoute>} />
+              <Route path="/messages" element={<PrivateRoute><Messages_NEW_SKIN /></PrivateRoute>} />
+              <Route path="/messages-new" element={<PrivateRoute><Messages_NEW_SKIN /></PrivateRoute>} />
               <Route path="/messages-orders" element={<PrivateRoute><Messages_NEW_SKIN /></PrivateRoute>} />
+              <Route path="/plans" element={<Plans />} />
+              <Route path="/settings/billing" element={<PrivateRoute><SettingsBilling /></PrivateRoute>} />
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
               <Route path="/upgrade-seller" element={<UpgradeSeller />} />

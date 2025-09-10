@@ -1,6 +1,6 @@
 // src/pages/Settings/Billing.tsx
 import React from "react";
-import { getMySubscription, openCustomerPortal, PLAN_FEATURES } from "@/lib/billing";
+import { getMySubscription, openCustomerPortal, PLAN_FEATURES, getIncludedKeywordsForPlan } from "@/lib/billing";
 import { useEffect, useState } from "react";
 
 type Sub = {
@@ -47,6 +47,11 @@ export default function BillingSettings() {
                 Renueva el: {new Date(sub.current_period_end).toLocaleDateString()}
                 {sub?.cancel_at_period_end ? " (cancelación al final del periodo)" : ""}
               </p>
+            {/* Palabras clave incluidas */}
+            <p className="mt-1 text-slate-600">
+              Palabras clave incluidas gratis: <strong>{getIncludedKeywordsForPlan(sub?.plan_tier)}</strong>
+            </p>
+
             )}
 
             <div className="mt-4 flex gap-3">

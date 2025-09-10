@@ -93,10 +93,12 @@ export default function CompanyAddress() {
         if (coords) {
           payload.latitude = coords.lat;
           payload.longitude = coords.lng;
+          
+          
         }
       } catch {}
 
-      const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
+      const { error } = await supabase.from('profiles').upsert({ id: user.id, ...payload }, { onConflict: 'id' });
       if (error) throw error;
 
       toast({ title: "Dirección guardada", description: "Tu ubicación se ha actualizado correctamente." });
