@@ -1,29 +1,14 @@
 // src/lib/billing.ts
-import { PLANS } from '@/lib/billing/plans';
-export type PlanKey = keyof typeof PLANS;
+// Helpers de billing para frontend (Stripe Checkout + Portal)
+import { supabase } from "@/integrations/supabase/client";
 
-export type MySubscription = {
-  price_id?: string | null;
-  status?: string | null;
-  current_period_end?: string | null;
-  cancel_at_period_end?: boolean | null;
-  stripe_customer_id?: string | null;
-} | null;
-
-/**
- * startCheckout: Crea sesión de Checkout en Vercel y redirige al usuario.
- * Requiere: STRIPE_SECRET_KEY en Vercel y VITE_PRICE_* en el frontend.
- */
 export async function startCheckout(priceId: string, opts?: {
   mode?: 'subscription' | 'payment';
   successUrl?: string;
   cancelUrl?: string;
   customerEmail?: string;
 }) {
-  if (!priceId) {
-    console.warn('[billing] startCheckout: priceId vacío');
-    return;
-  }
+  if (!priceId) throw new Error("priceId vacío");
   const res = await fetch('/api/create-checkout-session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -35,95 +20,55 @@ export async function startCheckout(priceId: string, opts?: {
       customer_email: opts?.customerEmail,
     }),
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || `HTTP ${res.status}`);
-  }
-
-  const data = await res.json();
-  if (data?.url) {
-    window.location.href = data.url as string;
-    return;
-  }
-  console.error('[billing] No url in checkout session response', data);
+  const data = await res.json().catch(() => ({} as any));
+  if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  if (data?.url) { window.location.href = data.url as string; return; }
+  throw new Error("Respuesta de checkout sin URL");
 }
 
-/**
- * subscribeToPrice (shim): export para evitar romper imports existentes.
- * Si tu app lo usa realmente para escuchar cambios, implementa la lógica real aquí.
- */
+// Shim para mantener compatibilidad con imports antiguos
 export function subscribeToPrice(_priceId: string, _cb: (v: any) => void) {
   console.warn('[billing] subscribeToPrice shim: no-op');
   return () => {};
 }
 
-/**
- * getPlanByPriceId: busca el plan a partir de un priceId (mensual, anual o keyword extra).
- * Devuelve el objeto del plan si coincide alguna de sus priceIds.
- */
-export function getPlanByPriceId(priceId: string) {
-  if (!priceId) return null;
-  const entries = Object.entries(PLANS) as [PlanKey, typeof PLANS[PlanKey]][];
-  for (const [_key, plan] of entries) {
-    if (
-      plan.monthly?.priceId === priceId ||
-      plan.yearly?.priceId === priceId ||
-      plan.keywordExtraPriceId === priceId
-    ) {
-      return plan;
-    }
-  }
-  return null;
+export async function getMySubscription() {
+  console.warn('[billing] getMySubscription stub → devuelve null');
+  return null as any;
 }
 
-/**
- * getIncludedKeywordsForPlan: devuelve cuántas keywords vienen incluidas
- * Recibe o bien un planKey o un priceId (mensual/anual). Prioriza planKey si se da.
- */
-export function getIncludedKeywordsForPlan(params: { planKey?: PlanKey; priceId?: string }): number {
-  if (params?.planKey) {
-    const plan = PLANS[params.planKey];
-    return plan?.includedKeywords ?? 0;
-  }
-  if (params?.priceId) {
-    const plan = getPlanByPriceId(params.priceId);
-    return plan?.includedKeywords ?? 0;
-  }
-  return 0;
-}
+// Permite llamarse sin argumentos desde SettingsBilling.tsx
+export async function openCustomerPortal(returnUrl?: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.id) throw new Error("No hay sesión activa");
 
-/**
- * getMySubscription: stub seguro que evita romper SettingsBilling.
- * Devuelve null por defecto. Más adelante podemos enlazar Supabase/Stripe Webhooks.
- */
-export async function getMySubscription(): Promise<MySubscription> {
-  console.warn('[billing] getMySubscription stub: devuelve null hasta enlazar con tu backend (Supabase o webhooks).');
-  return null;
-}
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('stripe_customer_id')
+    .eq('id', user.id)
+    .single();
+  if (error) throw error;
 
-/**
- * openCustomerPortal: abre el Portal de Facturación de Stripe para un customerId dado.
- * Requiere tener el `stripe_customer_id` del usuario.
- */
-export async function openCustomerPortal(customerId: string, returnUrl?: string) {
-  if (!customerId) {
-    console.warn('[billing] openCustomerPortal: customerId vacío');
-    return;
-  }
-  const res = await fetch('/api/create-customer-portal', {
+  const customerId = profile?.stripe_customer_id;
+  if (!customerId) throw new Error("El perfil no tiene stripe_customer_id");
+
+  const res = await fetch('/api/stripe/customer-portal-link', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ customerId, returnUrl }),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || `HTTP ${res.status}`);
+  const data = await res.json().catch(() => ({} as any));
+  if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  if (data?.url) { window.location.href = data.url as string; return; }
+  throw new Error("Respuesta de portal sin URL");
+}
+
+export function getIncludedKeywordsForPlan(planTier: string | null | undefined): number {
+  switch ((planTier || '').toLowerCase()) {
+    case "basic": return 1;
+    case "pro":
+    case "pro_plus":
+    case "pro+": return 3;
+    default: return 0;
   }
-  const data = await res.json();
-  if (data?.url) {
-    window.location.href = data.url as string;
-    return;
-  }
-  console.error('[billing] No url in portal session response', data);
 }

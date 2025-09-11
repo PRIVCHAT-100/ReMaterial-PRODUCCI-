@@ -84,6 +84,19 @@ const ProductDetail = () => {
 
         const conversationIds = conversations.map(c => c.id);
 
+        // Primero intentamos usar la vista agregada pública (funciona con RLS en producción)
+        const { data: agg, error: aggErr } = await supabase
+          .from('product_reservations_v1')
+          .select('reserved_qty')
+          .eq('product_id', id)
+          .maybeSingle();
+
+        if (!aggErr && agg && typeof agg.reserved_qty === 'number') {
+          const qty = agg.reserved_qty || 0;
+          setReservedInfo(qty > 0 ? { reserved: true, reserved_quantity: qty } : { reserved: false });
+          return; // ya actualizamos la UI; no hace falta consultar offers (protegida por RLS)
+        }
+
         // Buscar TODAS las ofertas reservadas y SUMAR cantidades
         const { data: reservedOffers, error: offersError } = await supabase
           .from('offers')
@@ -480,293 +493,227 @@ const ProductDetail = () => {
                     </button>
 
                     <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-2">
-                      {product.images.map((_: any, i: number) => (
-                        <span
-                          key={i}
-                          className={
-                            "h-1.5 w-1.5 rounded-full bg-white/50 " +
-                            (i === currentIdx ? "bg-white" : "")
-                          }
+                      {product.images.map((_: any, idx: number) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className={`w-2 h-2 rounded-full ${
+                            idx === currentIdx
+                              ? "bg-primary"
+                              : "bg-muted-foreground/50"
+                          }`}
+                          onClick={() => setDetailIndex(idx)}
+                          aria-label={`Ir a imagen ${idx + 1}`}
                         />
                       ))}
                     </div>
                   </>
                 )}
               </div>
+
+              {product.images && product.images.length > 1 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {product.images.map((img: string, idx: number) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className={`aspect-video bg-muted rounded overflow-hidden ${
+                        idx === currentIdx ? "ring-2 ring-primary" : ""
+                      }`}
+                      onClick={() => setDetailIndex(idx)}
+                    >
+                      <img
+                        src={img}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Info */}
+          {/* Información del producto */}
           <div className="space-y-6">
             <div>
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground mb-2">{product.title}</h1>
-                  <div className="flex items-center gap-2">
-                    {product.category && <Badge variant="secondary">{product.category}</Badge>}
-                    {/* 🆕 Badge RESERVADO/AGOTADO junto al título */}
+                  <h1 className="text-3xl font-bold mb-2">{product.title}</h1>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Badge variant="secondary">{product.category}</Badge>
                     {reservedInfo.reserved && (
-                      <Badge className={`${getReserveColor()} text-white`}>
+                      <Badge variant="outline" className={getReserveColor()}>
                         {getReserveText()}
                       </Badge>
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={toggleFavorite} type="button">
-                    <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    toast({ title: "Enlace copiado", description: "El enlace del producto ha sido copiado al portapapeles" });
-                  }}>
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button variant="ghost" size="icon" onClick={toggleFavorite} type="button">
+                  <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+                </Button>
               </div>
-              
-              <div className="text-4xl font-bold text-primary mb-2">€{product.price}</div>
-              {/* 🆕 Mostrar precio reservado si existe */}
-              {reservedInfo.reserved && reservedInfo.reserved_price != null && (
-                <div className="text-sm text-amber-700 mb-2">
-                  Precio reserva: €{Number(reservedInfo.reserved_price).toLocaleString("es-ES")}
-                </div>
-              )}
-              
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  {product.location}
+
+              <div className="flex items-baseline gap-2 mb-4">
+                <span className="text-3xl font-bold text-primary">
+                  {product.price} €
+                </span>
+                {product.original_price && (
+                  <span className="text-muted-foreground line-through">
+                    {product.original_price} €
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <MapPin className="h-4 w-4" />
+                <span>{product.location}</span>
+                {me && seller?.lat && seller?.lon && (
                   <DistanceBadge
-                    me={me}
-                    item={product.latitude && product.longitude ? { latitude: product.latitude, longitude: product.longitude } : null}
-                    className="ml-1 opacity-70"
+                    lat1={me.latitude}
+                    lon1={me.longitude}
+                    lat2={seller.lat}
+                    lon2={seller.lon}
                   />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Publicado el {new Date(product.created_at).toLocaleDateString()}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  Cantidad: {product.quantity} {product.unit}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Truck className="h-4 w-4" />
-                  {product.shipping_available ? "Envío disponible" : "Sin envío"}
-                </div>
+                )}
               </div>
+
+              <p className="text-muted-foreground mb-6">{product.description}</p>
             </div>
 
-            {/* 🆕 Información de reserva */}
-            {reservedInfo.reserved && (
-              <div className={`rounded-lg border p-3 ${
-                isSoldOut ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"
-              }`}>
-                <div className={`font-medium ${
-                  isSoldOut ? "text-red-800" : "text-amber-800"
-                }`}>
-                  {isSoldOut ? "🔴 PRODUCTO AGOTADO" : "🟠 PRODUCTO RESERVADO"}
+            {/* Detalles del producto */}
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-3">Detalles del producto</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Condición</span>
+                    <span className="font-medium">{product.condition}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Disponibilidad</span>
+                    <span className="font-medium">
+                      {product.quantity || 1} unidad{product.quantity !== 1 ? 'es' : ''}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Publicado</span>
+                    <span className="font-medium">
+                      {new Date(product.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Vistas</span>
+                    <span className="font-medium">{product.views || 0}</span>
+                  </div>
                 </div>
-                {reservedInfo.reserved_quantity !== null && product.quantity !== null && (
-                  <div className={`text-sm ${isSoldOut ? "text-red-600" : "text-amber-600"}`}>
-                    {isSoldOut 
-                      ? `Total reservado: ${reservedInfo.reserved_quantity} ${product.unit}`
-                      : `Reservado: ${reservedInfo.reserved_quantity} de ${product.quantity} ${product.unit}`
-                    }
-                  </div>
-                )}
-                {reservedInfo.reserved_price && (
-                  <div className={`text-sm ${isSoldOut ? "text-red-600" : "text-amber-600"}`}>
-                    Precio acordado: €{reservedInfo.reserved_price.toLocaleString("es-ES")}
-                  </div>
-                )}
-                {!isSoldOut && product.quantity !== null && reservedInfo.reserved_quantity !== null && (
-                  <div className="text-sm text-green-600 font-medium mt-1">
-                    📦 Disponible: {product.quantity - reservedInfo.reserved_quantity} {product.unit}
-                  </div>
-                )}
-              </div>
-            )}
+              </CardContent>
+            </Card>
 
-            {/* Acciones */}
+            {/* Botones de acción */}
             <div className="space-y-3">
-              {/* 🆕 Reservar directo (solo vendedor y si NO está reservado) */}
-              {user?.id === product.seller_id && !reservedInfo.reserved && (
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  type="button"
-                  onClick={reserveDirect}
-                >
-                  Marcar como RESERVADO (precio acordado)
-                </Button>
-              )}
-
-              {/* 🆕 Quitar reserva (solo vendedor y si está reservado) */}
-              {user?.id === product.seller_id && reservedInfo.reserved && (
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  type="button"
-                  onClick={unreserve}
-                >
-                  Quitar todas las reservas
-                </Button>
-              )}
-
-              {/* 🔒 Editar: pasa el producto por state para precargar al instante */}
-              {user?.id === product.seller_id && (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  type="button"
-                  onClick={() => navigate(`/edit/${product.id}`, { state: { product } })}
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Editar producto
-                </Button>
-              )}
-
-              <Button onClick={handleContact} className="w-full" type="button">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Contactar Vendedor
-              </Button>
-
-              {/* 🆕 SOLO deshabilitar contraoferta si está agotado */}
-              {!(reservedInfo.reserved && user?.id !== product.seller_id) && (
-                <Button 
-                  variant="outline"
-                  className="w-full"
-                  type="button"
-                  onClick={() => {
-                    if (!user) {
-                      toast({ title: "Inicia sesión", description: "Debes iniciar sesión para hacer una contraoferta", variant: "destructive" });
-                      return;
-                    }
-                    setCounterOpen(true);
-                  }}
-                  disabled={isSoldOut}
-                >
-                  💬 {isSoldOut ? "Producto Agotado" : "Hacer contraoferta"}
-                </Button>
-              )}
-
-              {product.allow_direct_purchase && !(reservedInfo.reserved && user?.id !== product.seller_id) && (
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setPaymentDialogOpen(true)}
-                  disabled={isSoldOut}
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  {isSoldOut ? "Producto Agotado" : "Comprar Directamente"}
-                </Button>
-              )}
-
-              {reservedInfo.reserved && user?.id !== product.seller_id && (
-                <div className={`mt-2 rounded-md border px-3 py-2 text-sm ${
-                  isSoldOut ? "border-red-300 bg-red-50 text-red-900" : "border-amber-300 bg-amber-50 text-amber-900"
-                }`}>
-                  {isSoldOut 
-                    ? "Este producto está completamente agotado."
-                    : "Este producto está reservado."
-                  }
-                </div>
+              {user?.id !== product.seller_id ? (
+                <>
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={() => setPaymentDialogOpen(true)}
+                    disabled={isSoldOut}
+                  >
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    Comprar ahora
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setCounterOpen(true)}
+                    disabled={isSoldOut}
+                  >
+                    <Pencil className="h-5 w-5 mr-2" />
+                    Hacer contraoferta
+                  </Button>
+                  
+                  <Button variant="outline" className="w-full" onClick={handleContact} type="button">
+                    <MessageSquare className="h-5 w-5 mr-2" />
+                    Contactar con el vendedor
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* 🆕 Botones para el vendedor */}
+                  {!reservedInfo.reserved ? (
+                    <Button variant="outline" className="w-full" onClick={reserveDirect} type="button">
+                      <Truck className="h-5 w-5 mr-2" />
+                      Marcar como reservado
+                    </Button>
+                  ) : (
+                    <Button variant="outline" className="w-full" onClick={unreserve} type="button">
+                      <Truck className="h-5 w-5 mr-2" />
+                      Quitar reserva
+                    </Button>
+                  )}
+                  
+                  <Button variant="outline" className="w-full" onClick={() => navigate(`/edit-product/${product.id}`)} type="button">
+                    <Pencil className="h-5 w-5 mr-2" />
+                    Editar producto
+                  </Button>
+                </>
               )}
             </div>
-
-            {/* Vendedor */}
-            {seller && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
-                    <ProfileAvatar className="h-12 w-12" name={ seller?.company_name || user?.email || "Perfil" } />
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{seller.company_name}</h3>
-                      <div className="flex items-center mt-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star key={star} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        ))}
-                        <span className="ml-1 text-xs text-muted-foreground">(4.8)</span>
-                      </div>
-                      
-                      <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                        {seller.location && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {seller.location}
-                          </div>
-                        )}
-                        {seller.phone && (
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {seller.phone}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-3 w-full"
-                        onClick={() => navigate(`/empresa/${seller.id}`, { state: { from: `/products/${product.id}` } })}
-                      >
-                        Ver Perfil Completo
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
 
-        {/* Descripción */}
-        <div className="mt-8">
+        {/* Información del vendedor */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6">Información del vendedor</h2>
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Descripción del Producto</h2>
-              <div className="prose max-w-none">
-                <p className="text-muted-foreground whitespace-pre-wrap">{product.description}</p>
-              </div>
-              
-              {product.specifications && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold mb-3">Especificaciones</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(product.specifications).map(([key, value]) => (
-                      <div key={key} className="flex justify-between border-b pb-2">
-                        <span className="font-medium capitalize">{key.replace('_', ' ')}</span>
-                        <span className="text-muted-foreground">{value as string}</span>
-                      </div>
-                    ))}
+              <div className="flex items-center gap-4">
+                <ProfileAvatar 
+                  profileId={product.seller_id} 
+                  className="h-16 w-16"
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{seller?.username || "Usuario"}</h3>
+                  <p className="text-muted-foreground mb-2">
+                    Miembro desde {new Date(seller?.created_at || Date.now()).toLocaleDateString()}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium">4.8</span>
+                    </div>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-sm text-muted-foreground">25 valoraciones</span>
                   </div>
                 </div>
-              )}
+                <Button variant="outline" onClick={handleContact} type="button">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Contactar
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
-      
+
+      <PaymentDialog 
+        open={paymentDialogOpen} 
+        onOpenChange={setPaymentDialogOpen}
+        product={product}
+        seller={seller}
+        reservedInfo={reservedInfo}
+      />
+
       <CounterOfferDialog
         open={counterOpen}
         onOpenChange={setCounterOpen}
-        product={{
-          id: product.id,
-          title: product.title,
-          unit: product.unit,
-          price: product.price,
-          seller_id: product.seller_id,
-        }}
+        product={product}
+        seller={seller}
       />
 
-      <PaymentDialog 
-        open={paymentDialogOpen}
-        onOpenChange={setPaymentDialogOpen}
-        product={product}
-      />
-      
       <Footer />
     </div>
   );
